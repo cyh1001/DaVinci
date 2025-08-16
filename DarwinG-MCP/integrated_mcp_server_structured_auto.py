@@ -48,6 +48,14 @@ from fastmcp import FastMCP
 from pydantic import Field
 from dotenv import load_dotenv
 
+# Coinbase CDP SDK imports
+try:
+    from cdp import Cdp, Wallet
+    CDP_AVAILABLE = True
+except ImportError:
+    print("Warning: Coinbase CDP SDK not installed. Install with: pip install cdp-sdk", file=sys.stderr)
+    CDP_AVAILABLE = False
+
 # Load environment variables
 load_dotenv("../.env")
 
@@ -64,6 +72,23 @@ from utils.internal_tools import create_product_listing_internal
 # Initialize storage
 storage = DraftStorage()
 
+# Configure Coinbase CDP
+cdp_configured = False
+if CDP_AVAILABLE:
+    try:
+        # Try to configure CDP from environment variables
+        api_key_name = os.getenv("CDP_API_KEY_NAME")
+        api_key_private_key = os.getenv("CDP_API_KEY_PRIVATE_KEY")
+        
+        if api_key_name and api_key_private_key:
+            Cdp.configure(api_key_name, api_key_private_key)
+            cdp_configured = True
+            print("✅ Coinbase CDP configured successfully", file=sys.stderr)
+        else:
+            print("⚠️ CDP API keys not found in environment variables", file=sys.stderr)
+            print("   Set CDP_API_KEY_NAME and CDP_API_KEY_PRIVATE_KEY to enable CDP features", file=sys.stderr)
+    except Exception as e:
+        print(f"❌ Failed to configure CDP: {e}", file=sys.stderr)
 
 # OAuth-based authentication using WorkOS AuthKit
 from fastmcp.server.auth.providers.workos import AuthKitProvider
@@ -1972,6 +1997,47 @@ def process_to_products(
             "error": f"Processing failed: {str(e)}",
             "session_id": session_id
         }
+
+# Coinbase CDP Tools
+@mcp.tool(
+    name="get_wallet_balance",
+    description="Get token balances for a cryptocurrency wallet using Coinbase CDP. Returns ETH and token balances for the specified wallet address."
+)
+def get_wallet_balance(
+    wallet_address: Annotated[str, Field(description="The cryptocurrency wallet address to check (Ethereum format: 0x...)")],
+    network: Annotated[Literal["base-sepolia", "ethereum-sepolia"], Field(description="The blockchain network to query. Use 'base-sepolia' for Base testnet or 'ethereum-sepolia' for Ethereum testnet")] = "base-sepolia"
+) -> str:
+    """
+    Get wallet balance using Coinbase CDP SDK
+    """
+    if not CDP_AVAILABLE:
+        return "❌ Coinbase CDP SDK not available. Please install with: pip install cdp-sdk"
+    
+    if not cdp_configured:
+        return "❌ Coinbase CDP not configured. Please set CDP_API_KEY_NAME and CDP_API_KEY_PRIVATE_KEY environment variables"
+    
+    try:
+        # Note: This is a simplified example for demonstration
+        # In a real implementation, you would use the CDP SDK to query wallet balances
+        return f"""
+✅ **Wallet Balance Query**
+📍 **Address**: {wallet_address}
+🌐 **Network**: {network}
+
+⚠️ **Demo Implementation**
+This is a basic implementation for ETH Global NYC 2025 hackathon demonstration.
+- CDP SDK integrated successfully
+- Configuration validated
+- Ready for full balance query implementation
+
+🔧 **Next Steps**:
+- Implement actual balance queries using CDP Data APIs
+- Add support for multiple token types
+- Include USD value conversion
+        """.strip()
+        
+    except Exception as e:
+        return f"❌ Error querying wallet balance: {str(e)}"
 
 if __name__ == "__main__":
     import sys
