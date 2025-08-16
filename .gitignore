@@ -61,3 +61,6 @@ temp/
 package-lock.json
 yarn.lock
 uv.lock
+
+# Claude Code memory file
+CLAUDE.md
