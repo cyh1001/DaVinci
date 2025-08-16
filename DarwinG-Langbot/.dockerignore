@@ -1,0 +1,94 @@
+# flyctl launch added from .gitignore
+config.py
+**\.idea
+**\__pycache__
+**\database.db
+**\langbot.log
+banlist.py
+plugins
+!plugins\__init__.py
+revcfg.py
+**\prompts
+**\logs
+**\sensitive.json
+**\temp
+**\current_tag
+**\scenario
+!**\scenario\default-template.json
+**\override.json
+**\cookies.json
+**\data\labels\announcement_saved.json
+**\cmdpriv.json
+**\tips.py
+**\venv*
+**\bin
+**\.vscode
+**\test_*
+**\venv
+**\hugchat.json
+**\qcapi
+**\claude.json
+**\bard.json
+*yaml
+!**\.pre-commit-config.yaml
+!**\components.yaml
+!docker-compose.yaml
+**\data\labels\instance_id.json
+**\.DS_Store
+data
+**\botpy.log*
+poc
+libs\wecom_api\test.py
+venv
+**\test.py
+web_ui
+**\.venv
+**\uv.lock
+test
+
+# flyctl launch added from web\.gitignore
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+web\node_modules
+web\.pnp
+web\**\.pnp.*
+web\**\.yarn\*
+!web\**\.yarn\patches
+!web\**\.yarn\plugins
+!web\**\.yarn\releases
+!web\**\.yarn\versions
+
+# testing
+web\coverage
+
+# next.js
+web\.next
+web\out
+
+# production
+web\build
+
+# misc
+web\**\.DS_Store
+web\**\*.pem
+
+# debug
+web\**\npm-debug.log*
+web\**\yarn-debug.log*
+web\**\yarn-error.log*
+web\**\.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+web\**\.env*
+!web\**\.env.example
+
+# vercel
+web\**\.vercel
+
+# typescript
+web\**\*.tsbuildinfo
+web\**\next-env.d.ts
+
+web\**\pnpm-lock.yaml
+fly.toml

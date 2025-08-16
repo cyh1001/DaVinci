@@ -1,0 +1,21 @@
+[project]
+name = "forest-market-mcp-server"
+version = "1.0.0"
+description = "Integrated MCP Server for Forest Market Draft Management and Product Listing Upload"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=2.0.0",
+    "openai>=1.0.0",
+    "requests>=2.25.0",
+    "python-dotenv>=0.19.0",
+    "pydantic>=2.0.0",
+    "uvicorn>=0.22.0",
+    "fastapi>=0.104.0",
+    "PyJWT>=2.8.0",
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.1",
+    "pillow>=11.3.0",
+]
+
+[tool.uv]
+dev-dependencies = []

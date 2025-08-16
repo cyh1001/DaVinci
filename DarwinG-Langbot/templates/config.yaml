@@ -1,0 +1,21 @@
+admins: []
+api:
+  port: 5300
+command:
+  prefix:
+    - "!"
+    - ！
+  privilege: {}
+concurrency:
+  pipeline: 20
+  session: 1
+mcp:
+  servers: []
+proxy:
+  http: ""
+  https: ""
+system:
+  recovery_key: ""
+  jwt:
+    expire: 604800
+    secret: ""

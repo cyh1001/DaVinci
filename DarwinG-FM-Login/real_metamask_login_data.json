@@ -1,0 +1,10 @@
+{
+  "wallet_address": "0x63A3020AcE23d32C5dE5f7009fA8e35e1D9F45c3",
+  "signature": "0x17998cb7abe5b9562ba1d3ec45da0c8b931396a7811a9aa2f30bedd77aad4aa00a91989be177bb43ec4b2f4c7cd64745ac2992f6a63f286a814ce4481d0f4abc1c",
+  "csrf_token": "bee1601ea6d800c917f7f45cff2025c32ba27a6a87a970e190f1f3e09b30a968",
+  "nonce": "45348fd467264ae4a73835537975fc1b",
+  "message": "forestmarket.net wants you to sign in with your Ethereum account:\n0x63A3020AcE23d32C5dE5f7009fA8e35e1D9F45c3\n\nWelcome to Forest Market. Signing is the only way we can truly know that you are the owner of the wallet you are connecting. Signing is a safe, gas-less transaction that does not in any way give Forest Market permission to perform any transactions with your wallet.\n\nURI: https://forestmarket.net/en-HK\nVersion: 1\nChain ID: 1\nNonce: 45348fd467264ae4a73835537975fc1b\nIssued At: 2025-08-05T14:20:52.819293Z\nRequest ID: 02e5c99f-a7aa-4841-b64a-df128fa8e08f",
+  "dynamic_env_id": "02e5c99f-a7aa-4841-b64a-df128fa8e08f",
+  "timestamp": "2025-08-05T22:21:13.002040",
+  "source": "real_metamask_login"
+}

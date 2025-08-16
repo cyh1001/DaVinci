@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "twitter-tools": {
+      "command": "python",
+      "args": ["twitter_mcp_server.py"],
+      "cwd": "D:\\workspace\\DarwinG-Marketing",
+      "env": {
+        "GAME_TWITTER_ACCESS_TOKEN": "your_token_here"
+      }
+    }
+  }
+}
