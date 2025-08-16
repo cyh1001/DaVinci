@@ -7,7 +7,7 @@ import {
 } from "ai";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Paperclip, Send, Sparkles, Square } from 'lucide-react';
+import { Paperclip, Send, Sparkles, Square, Package, Megaphone, Users } from 'lucide-react';
 import {
   MessageBubble,
   AttachmentChips,
@@ -17,7 +17,7 @@ import {
 } from "@/components/chat-bubbles";
 import { type ToolExecution } from "@/components/tool-execution";
 import { cn } from "@/lib/utils";
-import { STORAGE_KEY } from "@/components/wallet-connect";
+import { useDynamicContext, DynamicWidget, useAuthenticateConnectedUser } from "@dynamic-labs/sdk-react-core";
 import { 
   saveConversation, 
   deleteConversation,
@@ -29,7 +29,7 @@ import {
   type DifyHistoryResponse
 } from "@/lib/conversation";
 
-const CONVERSATION_ID_KEY = "darwin_conversation_id";
+const CONVERSATION_ID_KEY = "davinci_conversation_id";
 import { Sidebar } from "@/components/sidebar"; // Import the new Sidebar component
 
 const BRAND_COLOR = "rgb(249, 217, 247)";
@@ -37,6 +37,44 @@ const BRAND_COLOR = "rgb(249, 217, 247)";
 type DragState = "idle" | "over";
 
 export default function Page() {
+  // Dynamic钱包状态 - 作为唯一真实来源
+  const { primaryWallet, user, setShowAuthFlow } = useDynamicContext();
+  const { authenticateUser, isAuthenticating } = useAuthenticateConnectedUser();
+  
+  // 调试信息：检查认证功能是否可用
+  console.log('🔍 Dynamic Context Debug:', {
+    primaryWallet: !!primaryWallet,
+    user: !!user,
+    setShowAuthFlow: !!setShowAuthFlow,
+    authenticateUser: !!authenticateUser,
+    isAuthenticating
+  });
+  
+  // 使用state来稳定钱包地址，避免无限循环
+  const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
+  
+  // 访客状态管理
+  const isVisitor = !!walletAddress && !user;
+  const isAuthenticated = !!walletAddress && !!user;
+  
+  // 访客模式对话次数限制
+  const VISITOR_MESSAGE_LIMIT = 3; // 访客最多5条消息
+  const [visitorMessageCount, setVisitorMessageCount] = React.useState(0);
+  
+  // 仅在primaryWallet.address实际变化时更新
+  React.useEffect(() => {
+    const newAddress = primaryWallet?.address || null;
+    if (newAddress !== walletAddress) {
+      setWalletAddress(newAddress);
+      console.log('🔄 Wallet address updated:', newAddress);
+      
+      // Reset visitor message count when wallet changes
+      if (newAddress) {
+        setVisitorMessageCount(0);
+      }
+    }
+  }, [primaryWallet?.address, walletAddress]);
+
   const {
     messages,
     sendMessage,
@@ -151,7 +189,6 @@ export default function Page() {
   const attachMenuBottomRef = React.useRef<HTMLDivElement>(null);
   const [activeMainTab, setActiveMainTab] = React.useState<'chat' | 'products' | 'marketing' | 'crm'>('chat'); // State for active main content tab
   const [conversationId, setConversationId] = React.useState<string | undefined>(); // State for Dify conversation continuity
-  const [walletAddress, setWalletAddress] = React.useState<string | null>(null); // State for wallet connection
   const [currentConversationId, setCurrentConversationId] = React.useState<string | undefined>(undefined); // Current selected conversation
   const [isLoadingHistory, setIsLoadingHistory] = React.useState(false);
   const [conversationRefreshTrigger, setConversationRefreshTrigger] = React.useState(0); // Trigger to refresh sidebar
@@ -170,7 +207,9 @@ export default function Page() {
       
       // Store by conversation ID and message position instead of message ID
       // This way tools persist across message ID changes
-      const conversationKey = `${conversationId}_msg_${messages.length - 1}`; // Use message position
+      // ✅ 确保索引不为负数
+      const messageIndex = Math.max(0, messages.length - 1);
+      const conversationKey = `${conversationId}_msg_${messageIndex}`; // Use message position
       allToolExecutions[conversationKey] = { messageId, tools };
       
       localStorage.setItem(key, JSON.stringify(allToolExecutions));
@@ -220,35 +259,43 @@ export default function Page() {
   // Progressive loading messages that smoothly transition between phases
   const unifiedLoader = React.useMemo(() => {
     if (!isHydrated) {
-      return { title: 'Loading Darwin', subtitle: 'Initializing your workspace...' };
+      return { title: 'Loading DaVinci', subtitle: 'Initializing your workspace...' };
     }
     if (isInitialLoading || isLoadingHistory) {
-      return { title: 'Loading Darwin', subtitle: 'Retrieving your conversations...' };
+      return { title: 'Loading DaVinci', subtitle: 'Retrieving your conversations...' };
     }
-    return { title: 'Loading Darwin', subtitle: 'Almost ready...' };
+    return { title: 'Loading DaVinci', subtitle: 'Almost ready...' };
   }, [isHydrated, isInitialLoading, isLoadingHistory]);
 
-  // Hydration and wallet connection status check
+  // 注释掉重复的日志记录，避免循环
+
+  // Hydration - should happen immediately regardless of wallet status
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedWalletAddress = localStorage.getItem(STORAGE_KEY);
-      const savedConversationId = localStorage.getItem(CONVERSATION_ID_KEY);
-      console.log('🔄 HYDRATION - savedWallet:', savedWalletAddress, 'savedConversation:', savedConversationId);
-      
-      setWalletAddress(savedWalletAddress);
-      setIsHydrated(true); // Mark as hydrated after checking localStorage
-      
-      // If we have both wallet and conversation, set it up for auto-loading
-      if (savedWalletAddress && savedConversationId) {
-        console.log('🔄 IMMEDIATE LOAD - Both wallet and conversation found, setting up auto-load');
-        setCurrentConversationId(savedConversationId);
-        // Keep isInitialLoading true - it will be cleared by auto-load useEffect
-      } else {
-        console.log('🔄 NO CONVERSATION TO LOAD - Will show welcome screen');
-        // Keep isInitialLoading true - it will be cleared by auto-load useEffect
-      }
+      console.log('🔄 HYDRATION - marking as hydrated');
+      setIsHydrated(true); // Mark as hydrated immediately
     }
   }, []);
+
+  // Conversation loading - only when we have wallet address
+  React.useEffect(() => {
+    if (isHydrated && walletAddress) {
+      const savedConversationId = localStorage.getItem(CONVERSATION_ID_KEY);
+      console.log('🔄 CONVERSATION LOAD - savedConversation:', savedConversationId);
+      
+      if (savedConversationId) {
+        console.log('🔄 IMMEDIATE LOAD - Conversation found, setting up auto-load');
+        setCurrentConversationId(savedConversationId);
+      } else {
+        console.log('🔄 NO CONVERSATION TO LOAD - Will show welcome screen');
+        setIsInitialLoading(false); // Stop loading, show welcome screen
+      }
+    } else if (isHydrated && !walletAddress) {
+      // Hydrated but no wallet - show welcome screen immediately
+      console.log('🔄 NO WALLET - Will show welcome screen');
+      setIsInitialLoading(false);
+    }
+  }, [isHydrated, walletAddress]);
 
   // Load tool executions when wallet address changes
   React.useEffect(() => {
@@ -260,31 +307,7 @@ export default function Page() {
     }
   }, [walletAddress, isHydrated, loadToolExecutionsFromStorage]);
 
-  // Listen for wallet connection changes  
-  React.useEffect(() => {
-    const handleStorageChange = () => {
-      const savedWalletAddress = localStorage.getItem(STORAGE_KEY);
-      setWalletAddress(savedWalletAddress);
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    const interval = setInterval(() => {
-      const savedWalletAddress = localStorage.getItem(STORAGE_KEY);
-      // Use the current state value from the callback to avoid dependency issues
-      setWalletAddress(currentWalletAddress => {
-        if (savedWalletAddress !== currentWalletAddress) {
-          return savedWalletAddress;
-        }
-        return currentWalletAddress;
-      });
-    }, 1000);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, []); // Remove walletAddress dependency to prevent infinite loop
+  // Note: Wallet connection changes are now handled by Dynamic SDK
 
   // Removed early reset of sending to avoid hiding loading bubble before text arrives
 
@@ -409,7 +432,7 @@ export default function Page() {
       setIsLoadingHistory(false);
       setIsInitialLoading(false);
     }
-  }, [walletAddress]); // Remove setMessages from dependencies to prevent instability
+  }, [walletAddress, loadToolExecutionsFromStorage]); // ✅ 添加缺失的依赖
 
   // Auto-load last conversation on page refresh - but not when user wants new conversation
   React.useEffect(() => {
@@ -948,6 +971,12 @@ export default function Page() {
       return;
     }
 
+    // Check visitor message limit
+    if (isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT) {
+      // Don't show alert, just return - UI will show the limit message
+      return;
+    }
+
     if (!input.trim() && files.length === 0) return;
 
     // Store input and files before clearing them
@@ -1190,6 +1219,11 @@ export default function Page() {
         } : {})
       });
 
+      // Update visitor message count
+      if (isVisitor) {
+        setVisitorMessageCount(prev => prev + 1);
+      }
+
       // Schedule cleanup of any temporary object URLs used for previews
       try {
         messageFiles.forEach((f) => {
@@ -1218,6 +1252,11 @@ export default function Page() {
   }, [input, files, sendMessage, walletAddress]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Disable keyboard shortcuts when visitor limit reached
+    if (isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT) {
+      return;
+    }
+    
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       onSend();
@@ -1298,36 +1337,93 @@ export default function Page() {
               <p className="text-xs text-gray-400 mt-2">{unifiedLoader.subtitle}</p>
             </div>
           ) : !walletAddress ? (
-            // Wallet connection required screen (minimalist welcome)
-            <div className="flex-1 flex items-center justify-center p-6">
-              <div className="w-full max-w-xl text-center mx-auto">
-                <div className="mx-auto mb-8 h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500/15 to-emerald-600/10 border border-emerald-200/40 flex items-center justify-center shadow-sm">
-                  <Sparkles className="h-7 w-7 text-emerald-600" />
+            // Modern welcome screen with integrated Dynamic wallet connection
+            <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-gray-50 via-white to-emerald-50/30 welcome-container">
+              <div className="w-full max-w-2xl text-center mx-auto">
+                {/* Logo and branding */}
+                <div className="mx-auto mb-8 h-20 w-20 rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                  <Sparkles className="h-10 w-10 text-white" />
                 </div>
-                <h1 className="text-3xl font-semibold tracking-tight mb-3 text-gray-900">
-                  <span className="bg-gradient-to-r from-emerald-600 to-emerald-700 bg-clip-text text-transparent">Welcome to Darwin</span>
+                
+                {/* Main heading */}
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-gray-900 welcome-title">
+                  <span className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 bg-clip-text text-transparent">
+                    Welcome to DaVinci
+                  </span>
                 </h1>
-                <p className="text-gray-600 mb-6 leading-relaxed max-w-prose mx-auto">
-                  An AI‑powered multi‑agent system for autonomous e‑commerce operations.
-                  Connect your wallet to begin.
+                
+                {/* Subtitle */}
+                <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto welcome-subtitle">
+                  AI-powered multi-agent system for autonomous e-commerce operations
                 </p>
-                <div className="rounded-2xl border border-gray-200/60 bg-white/70 backdrop-blur-sm shadow-sm p-5">
-                  <div className="flex flex-col items-center gap-3 text-center">
-                    <div className="text-sm text-gray-600">
-                      <div className="mb-2 font-medium text-gray-800">Supported wallets</div>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        <span className="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">MetaMask</span>
-                        <span className="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">OKX Wallet</span>
-                        <span className="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">Blocto</span>
+                
+                {/* Feature highlights */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10 text-center">
+                  <div className="p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-gray-200/50">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+                      <Package className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-1">Product Management</h3>
+                    <p className="text-sm text-gray-600">AI-driven inventory & optimization</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-gray-200/50">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+                      <Megaphone className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-1">Smart Marketing</h3>
+                    <p className="text-sm text-gray-600">Automated campaign generation</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-gray-200/50">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+                      <Users className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-1">CRM Intelligence</h3>
+                    <p className="text-sm text-gray-600">Customer insights & automation</p>
+                  </div>
+                </div>
+                
+                {/* Dynamic Widget Integration */}
+                <div className="rounded-2xl border border-gray-200/60 bg-white/80 backdrop-blur-sm shadow-lg p-8 mb-6">
+                  <div className="mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Connect to Get Started</h2>
+                    <p className="text-gray-600 text-sm">
+                      Choose your preferred connection method to access DaVinci's AI capabilities
+                    </p>
+                  </div>
+                  
+                  {/* Dynamic Widget - This will render the actual connection interface */}
+                  <div className="flex justify-center">
+                    <DynamicWidget />
+                  </div>
+                  
+                  {/* Visitor Mode Info */}
+                  <div className="mt-4 p-4 rounded-lg bg-amber-50 border border-amber-200">
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <span className="text-sm">ℹ️</span>
+                      <span className="text-sm font-medium">Visitor Mode Available</span>
+                    </div>
+                    <p className="text-xs text-amber-700 mt-1">
+                      Connect your wallet to explore basic features. Sign a message to unlock full AI capabilities and persistent storage.
+                    </p>
+                  </div>
+                  
+                  {/* Connection methods info */}
+                  <div className="mt-6 pt-6 border-t border-gray-200/60">
+                    <div className="text-xs text-gray-500 mb-3 font-medium">Supported Methods:</div>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">🦊 MetaMask</span>
+                      <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">🔗 WalletConnect</span>
+                      <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">📧 Email</span>
+                      <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">🔑 Social Login</span>
+                      <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">₿ Multi-Chain</span>
                     </div>
                   </div>
-                    <div className="text-xs text-gray-500">
-                      Use the "Connect Wallet" button in the left sidebar to continue.
                 </div>
-              </div>
-            </div>
-                <div className="mt-4 text-xs text-gray-500 text-center">
-                  By connecting, you agree to a secure, wallet‑bound session. No custodial access.
+                
+                {/* Security note */}
+                <div className="text-xs text-gray-500 text-center max-w-md mx-auto">
+                  🔒 Powered by Dynamic's enterprise-grade security. Your keys, your crypto. 
+                  Non-custodial and fully decentralized.
                 </div>
               </div>
             </div>
@@ -1342,6 +1438,28 @@ export default function Page() {
                 >
                     <div className="px-6 py-8 mx-auto max-w-4xl w-full">
                     
+                  {/* 访客模式提示 - 简化版本 */}
+                  {isVisitor && (
+                    <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                      <div className="flex items-center justify-between text-amber-800">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">ℹ️</span>
+                          <span className="text-sm">
+                            <strong>Visitor Mode:</strong> Chat with AI, but conversations won't be saved.
+                          </span>
+                        </div>
+                        <div className="text-xs bg-amber-100 px-2 py-1 rounded-full">
+                          {visitorMessageCount}/{VISITOR_MESSAGE_LIMIT} messages
+                        </div>
+                      </div>
+                      {visitorMessageCount >= VISITOR_MESSAGE_LIMIT && (
+                        <div className="mt-2 text-xs text-amber-700">
+                          Message limit reached. Sign a message to unlock unlimited conversations.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   {/* Unified loader already shown above; avoid second loader here */}
                   {/* Empty-state like ChatGPT: input centered until first message */}
                    {(() => {
@@ -1363,11 +1481,11 @@ export default function Page() {
                               <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-emerald-100 flex items-center justify-center">
                                 <Sparkles className="w-8 h-8 text-emerald-600" />
                               </div>
-                              <h1 className="text-3xl font-semibold mb-3">{"Welcome to Darwin"}</h1>
-                              <p className="text-gray-600 text-lg leading-relaxed mb-2">
+                              <h1 className="text-3xl font-semibold mb-3 welcome-title">{"Welcome to DaVinci"}</h1>
+                              <p className="text-gray-600 text-lg leading-relaxed mb-2 welcome-subtitle">
                                 {'A Multi-Agent AI System for Autonomous E-commerce Operations'}
                               </p>
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-gray-500 welcome-description">
                                 {'Drag & drop product files here or type your message below. Press Ctrl/⌘ + Enter to send.'}
                           </p>
                         </div>
@@ -1377,32 +1495,39 @@ export default function Page() {
                             "bg-gradient-to-br from-white via-white to-gray-50/30 backdrop-blur-sm",
                             drag === "over" 
                               ? "border-emerald-400 bg-gradient-to-br from-emerald-50 to-emerald-100/50 shadow-emerald-200/50 scale-[1.02]" 
-                              : "border-gray-200/60 hover:border-emerald-300/50"
+                              : "border-gray-200/60 hover:border-emerald-300/50",
+                            isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT && "opacity-50 cursor-not-allowed"
                           )}
-                          onDragEnter={(e) => {
+                          onDragEnter={isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT ? undefined : (e) => {
                             e.preventDefault();
                             setDrag("over");
                           }}
-                          onDragOver={(e) => {
+                          onDragOver={isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT ? undefined : (e) => {
                             e.preventDefault();
                             setDrag("over");
                           }}
-                          onDragLeave={(e) => {
+                          onDragLeave={isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT ? undefined : (e) => {
                             e.preventDefault();
                             setDrag("idle");
                           }}
-                          onDrop={onDrop}
+                          onDrop={isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT ? undefined : onDrop}
                         >
                           <div className="p-5 sm:p-6">
                             <Textarea
                               value={input}
                               onChange={(e) => setInput(e.target.value)}
                               onKeyDown={handleKeyDown}
-                              placeholder="Describe your ideal shop or business plan, upload your product files—Darwin will take it from there."
+                              disabled={isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT}
+                              placeholder={
+                                isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT
+                                  ? "Message limit reached. Sign a message to unlock unlimited conversations."
+                                  : "Describe your ideal shop or business plan, upload your product files—DaVinci will take it from there."
+                              }
                               className={cn(
                                 "min-h-[120px] resize-y border-0 bg-transparent text-gray-800 placeholder:text-gray-500",
                                 "focus:ring-0 focus:outline-none text-base leading-relaxed",
-                                "transition-all duration-200"
+                                "transition-all duration-200",
+                                isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT && "opacity-50 cursor-not-allowed bg-gray-100"
                               )}
                             />
                             <div className="flex items-center justify-between mt-4">
@@ -1410,11 +1535,13 @@ export default function Page() {
                               <Button
                                 variant="ghost"
                                 aria-label="Attach"
+                                disabled={isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT}
                                       className={cn(
                                         "h-12 w-12 p-0 rounded-xl transition-all duration-200 border shadow-sm",
                                         "bg-gradient-to-br from-white to-gray-50/80 border-gray-200/60",
                                         "hover:from-emerald-50 hover:to-emerald-100/50 hover:border-emerald-300/60 hover:shadow-md hover:scale-105",
-                                        "active:scale-95 backdrop-blur-sm flex items-center justify-center"
+                                        "active:scale-95 backdrop-blur-sm flex items-center justify-center",
+                                        isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT && "opacity-50 cursor-not-allowed"
                                       )}
                                       onClick={() => setShowAttachMenu(!showAttachMenu)}
                                     >
@@ -1483,7 +1610,7 @@ export default function Page() {
                                   ) : (
                               <Button
                                 onClick={onSend}
-                                disabled={sending || (!input.trim() && files.length === 0)}
+                                disabled={sending || (!input.trim() && files.length === 0) || (isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT)}
                                 aria-label="Send"
                                 className={cn(
                                   "h-12 w-12 p-0 rounded-xl transition-all duration-200 shadow-md",
@@ -1567,7 +1694,7 @@ export default function Page() {
                                       <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
                                     </div>
                                     <span className="text-sm text-muted-foreground animate-pulse">
-                                      Darwin is thinking...
+                                      DaVinci is thinking...
                                     </span>
                                   </div>
                                 </MessageBubble>
@@ -1696,7 +1823,7 @@ export default function Page() {
                               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
                             </div>
                                 <span className="text-sm text-muted-foreground animate-pulse">
-                                  Darwin is thinking...
+                                  DaVinci is thinking...
                                 </span>
                           </div>
                         </MessageBubble>
@@ -1904,6 +2031,42 @@ export default function Page() {
                         setFiles((prev) => prev.filter((f) => f.id !== id))
                       }
                     />
+                    
+                    {/* 访客模式限制提示 - 美观版本 */}
+                    {isVisitor && visitorMessageCount >= VISITOR_MESSAGE_LIMIT && (
+                      <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                            <span className="text-amber-600 text-lg">🔒</span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-amber-800 mb-1">
+                              Message Limit Reached
+                            </div>
+                            <div className="text-sm text-amber-700">
+                              You've used all {VISITOR_MESSAGE_LIMIT} visitor messages. Sign a message to unlock unlimited conversations and save your chat history.
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => {
+                              console.log('🔐 Chat area: Attempting to authenticate user...');
+                              if (authenticateUser) {
+                                authenticateUser();
+                                console.log('✅ Chat area: Authentication triggered');
+                              } else {
+                                console.error('❌ Chat area: authenticateUser is undefined');
+                                alert('Authentication not available. Please try refreshing the page.');
+                              }
+                            }}
+                            disabled={isAuthenticating}
+                            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isAuthenticating ? 'Signing...' : 'Sign Message'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
                       </div>
                   </div>
                 </div>
@@ -1915,7 +2078,7 @@ export default function Page() {
             <div className="flex-1 flex flex-col p-6 overflow-y-auto mx-auto w-full max-w-5xl">
               <h2 className="text-xl font-semibold mb-4">Product Management</h2>
               <p className="text-muted-foreground mb-4">
-                Upload your product list, and Darwin will automatically generate optimized listings and publish them across supported e-commerce platforms.
+                Upload your product list, and DaVinci will automatically generate optimized listings and publish them across supported e-commerce platforms.
               </p>
               <div className="border rounded-lg p-4 bg-white flex-1 flex items-center justify-center text-center text-muted-foreground">
                 <p>Product listing and management features will appear here.</p>
@@ -1927,7 +2090,7 @@ export default function Page() {
             <div className="flex-1 flex flex-col p-6 overflow-y-auto mx-auto w-full max-w-5xl">
               <h2 className="text-xl font-semibold mb-4">Marketing & Promotion</h2>
               <p className="text-muted-foreground mb-4">
-                Darwin designs and executes data-driven marketing strategies, auto-generates engaging promotional content, and builds content commerce funnels.
+                DaVinci designs and executes data-driven marketing strategies, auto-generates engaging promotional content, and builds content commerce funnels.
               </p>
               <div className="border rounded-lg p-4 bg-white flex-1 flex items-center justify-center text-center text-muted-foreground">
                 <p>Marketing campaign and social media features will appear here.</p>
@@ -1953,7 +2116,7 @@ export default function Page() {
 
       <footer className="w-full border-t">
         <div className="mx-auto max-w-5xl px-4 py-3 text-xs text-muted-foreground flex items-center justify-between">
-          <span>{"© "} {new Date().getFullYear()} {" Darwin"}</span>
+          <span>{"© "} {new Date().getFullYear()} {" DaVinci"}</span>
           <span>{"A Multi-Agent AI System for Autonomous E-commerce Operations\n"}</span>
         </div>
       </footer>

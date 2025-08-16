@@ -1,0 +1,422 @@
+/* DaVinci Light Theme - 现代精致白色主题 */
+
+/* ============================================ */
+/* 全局变量定义 - Light Theme */
+/* ============================================ */
+:root[data-theme="light"] {
+  /* 基础颜色 - 现代白色配色 */
+  --color-bg-primary: #fafafa;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #f8fafc;
+  --color-bg-surface: #f1f5f9;
+  --color-bg-hover: rgba(16, 185, 129, 0.04);
+  
+  /* 文字颜色 */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #64748b;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #ffffff;
+  
+  /* 翡翠绿主题色 - 更丰富的色调 */
+  --color-primary: #10b981;
+  --color-primary-light: #34d399;
+  --color-primary-dark: #059669;
+  --color-primary-hover: #047857;
+  --color-secondary: #6366f1;
+  --color-accent: #f59e0b;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-success: #22c55e;
+  
+  /* 边框颜色 */
+  --color-border-primary: #e2e8f0;
+  --color-border-secondary: #cbd5e1;
+  --color-border-focus: #10b981;
+  --color-border-hover: #34d399;
+  
+  /* 阴影效果 - 更精致的阴影 */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.15);
+  --shadow-focus: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  
+  /* 渐变效果 */
+  --gradient-primary: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  --gradient-secondary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --gradient-background: radial-gradient(ellipse at top, #ffffff 0%, #f8fafc 100%);
+  --gradient-card: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.8) 100%);
+  --gradient-button: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  --gradient-subtle: linear-gradient(135deg, rgba(16, 185, 129, 0.02) 0%, rgba(52, 211, 153, 0.02) 100%);
+  
+  /* 动画时长 */
+  --animation-fast: 0.15s;
+  --animation-normal: 0.25s;
+  --animation-slow: 0.4s;
+  
+  /* 覆盖默认CSS变量以适配组件 */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #475569;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #ffffff;
+  --ring: #10b981;
+}
+
+/* ============================================ */
+/* 基础样式重写 */
+/* ============================================ */
+[data-theme="light"] body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: 'SF Pro Display', 'Inter', system-ui, -apple-system, sans-serif;
+  transition: all var(--animation-normal) ease;
+  font-feature-settings: 'liga' 1, 'kern' 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 添加微妙的背景纹理 */
+[data-theme="light"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.02) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ============================================ */
+/* 组件样式优化 */
+/* ============================================ */
+
+/* 按钮样式 - 更精致的设计 */
+[data-theme="light"] .light-button,
+[data-theme="light"] button:not(.no-style) {
+  background: var(--gradient-primary);
+  border: 1px solid var(--color-primary);
+  color: var(--color-text-inverse);
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 12px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--animation-normal) cubic-bezier(0.4, 0.0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(8px);
+}
+
+[data-theme="light"] .light-button:hover,
+[data-theme="light"] button:not(.no-style):hover {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+  border-color: var(--color-primary-dark);
+}
+
+[data-theme="light"] .light-button:active,
+[data-theme="light"] button:not(.no-style):active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-md);
+}
+
+/* 卡片样式 - 现代玻璃拟态效果 */
+[data-theme="light"] .light-card {
+  background: var(--gradient-card);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 16px;
+  padding: 24px;
+  position: relative;
+  backdrop-filter: blur(20px);
+  transition: all var(--animation-normal) ease;
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="light"] .light-card:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+[data-theme="light"] .light-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gradient-primary);
+  opacity: 0.3;
+}
+
+/* 输入框样式 - 精致的交互效果 */
+[data-theme="light"] .light-input,
+[data-theme="light"] input:not(.no-style),
+[data-theme="light"] textarea:not(.no-style) {
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border-primary);
+  color: var(--color-text-primary);
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: all var(--animation-normal) cubic-bezier(0.4, 0.0, 0.2, 1);
+  box-shadow: var(--shadow-xs);
+}
+
+[data-theme="light"] .light-input:focus,
+[data-theme="light"] input:not(.no-style):focus,
+[data-theme="light"] textarea:not(.no-style):focus {
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .light-input::placeholder,
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+/* 侧边栏样式 - 现代设计 */
+[data-theme="light"] .light-sidebar {
+  background: var(--gradient-card);
+  border-right: 1px solid var(--color-border-primary);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 聊天气泡样式 - 优雅的对话设计 */
+[data-theme="light"] .light-chat-user {
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-md);
+  border: none;
+}
+
+[data-theme="light"] .light-chat-assistant {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="light"] .light-chat-assistant:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+/* 导航栏样式 - 毛玻璃效果 */
+[data-theme="light"] .light-navbar {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--color-border-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 加载动画 - 精致的旋转效果 */
+[data-theme="light"] .light-loader {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border-primary);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 50%;
+  animation: lightSpin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+}
+
+/* 状态指示器 - 优雅的脉冲效果 */
+[data-theme="light"] .light-status-online {
+  width: 8px;
+  height: 8px;
+  background: var(--gradient-primary);
+  border-radius: 50%;
+  box-shadow: var(--shadow-glow);
+  animation: lightPulse 2s ease-in-out infinite alternate;
+}
+
+/* 工具提示 - 现代设计 */
+[data-theme="light"] .light-tooltip {
+  background: var(--color-text-primary);
+  color: var(--color-text-inverse);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(10px);
+}
+
+/* 标签样式 - 精致的标签设计 */
+[data-theme="light"] .light-badge {
+  background: var(--gradient-subtle);
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-border-primary);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+/* 代码块样式 - 优雅的代码显示 */
+[data-theme="light"] .light-code {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+  border-left: 4px solid var(--color-primary);
+  padding: 20px;
+  border-radius: 12px;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  color: var(--color-text-primary);
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="light"] .light-code::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--gradient-primary);
+  opacity: 0.3;
+}
+
+/* 美化滚动条 */
+[data-theme="light"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: var(--color-bg-tertiary);
+  border-radius: 6px;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: var(--gradient-primary);
+  border-radius: 6px;
+  border: 1px solid var(--color-border-primary);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 选中文本样式 */
+[data-theme="light"] ::selection {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--color-text-primary);
+}
+
+/* ============================================ */
+/* 动画定义 */
+/* ============================================ */
+@keyframes lightPulse {
+  0% {
+    box-shadow: var(--shadow-glow);
+    opacity: 1;
+  }
+  100% {
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+    opacity: 0.8;
+  }
+}
+
+@keyframes lightSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lightFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes lightShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ============================================ */
+/* 响应式优化 */
+/* ============================================ */
+@media (max-width: 768px) {
+  [data-theme="light"] .light-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  [data-theme="light"] .light-button {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  [data-theme="light"] .light-input {
+    padding: 12px 16px;
+    font-size: 16px; /* 防止iOS缩放 */
+  }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+  :root[data-theme="light"] {
+    --color-primary: #047857;
+    --color-text-primary: #000000;
+    --color-border-primary: #374151;
+  }
+}
+
+/* 减少动画模式 */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="light"] * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 深色模式媒体查询兼容 */
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="light"] {
+    /* 保持白色主题变量不变 */
+  }
+}

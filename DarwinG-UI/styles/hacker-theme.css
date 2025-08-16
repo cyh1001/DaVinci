@@ -1,0 +1,500 @@
+/* DaVinci Hacker Theme - 极客风主题 */
+
+/* ============================================ */
+/* 全局变量定义 */
+/* ============================================ */
+:root[data-theme="hacker"] {
+  /* 基础颜色 - 黑绿极客配色 */
+  --color-bg-primary: #0a0e0a;
+  --color-bg-secondary: #0d1117;
+  --color-bg-tertiary: #161b22;
+  --color-bg-surface: #21262d;
+  
+  /* 文字颜色 */
+  --color-text-primary: #00ff41;
+  --color-text-secondary: #58a6ff;
+  --color-text-tertiary: #7d8590;
+  --color-text-inverse: #0a0e0a;
+  
+  /* 主题色 */
+  --color-primary: #00ff41;
+  --color-primary-dim: #00cc33;
+  --color-secondary: #58a6ff;
+  --color-accent: #ff6b6b;
+  --color-warning: #ffa500;
+  --color-error: #ff4757;
+  --color-success: #00ff41;
+  
+  /* 边框颜色 */
+  --color-border-primary: #30363d;
+  --color-border-secondary: #21262d;
+  --color-border-glow: #00ff4150;
+
+  /* 覆盖默认CSS变量以适配组件 */
+  --background: #0a0e0a;
+  --foreground: #00ff41;
+  --card: #0d1117;
+  --card-foreground: #00ff41;
+  --popover: #0d1117;
+  --popover-foreground: #00ff41;
+  --primary: #00ff41;
+  --primary-foreground: #0a0e0a;
+  --secondary: #161b22;
+  --secondary-foreground: #58a6ff;
+  --muted: #161b22;
+  --muted-foreground: #7d8590;
+  --accent: #161b22;
+  --accent-foreground: #00ff41;
+  --destructive: #ff4757;
+  --destructive-foreground: #ffffff;
+  --border: #30363d;
+  --input: #161b22;
+  --ring: #00ff41;
+  
+  /* 阴影效果 */
+  --shadow-sm: 0 2px 4px rgba(0, 255, 65, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 255, 65, 0.15);
+  --shadow-lg: 0 8px 24px rgba(0, 255, 65, 0.2);
+  --shadow-glow: 0 0 20px rgba(0, 255, 65, 0.3);
+  --shadow-glow-blue: 0 0 20px rgba(88, 166, 255, 0.3);
+  
+  /* 渐变效果 */
+  --gradient-primary: linear-gradient(135deg, #00ff41 0%, #00cc33 100%);
+  --gradient-secondary: linear-gradient(135deg, #58a6ff 0%, #4dabf7 100%);
+  --gradient-background: radial-gradient(ellipse at top, #0d1117 0%, #0a0e0a 100%);
+  --gradient-glow: linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(88, 166, 255, 0.1) 100%);
+  
+  /* 动画时长 */
+  --animation-fast: 0.15s;
+  --animation-normal: 0.3s;
+  --animation-slow: 0.6s;
+}
+
+/* ============================================ */
+/* 基础样式重写 */
+/* ============================================ */
+[data-theme="hacker"] body {
+  background: var(--color-bg-primary) !important;
+  color: var(--color-text-primary) !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+  transition: all var(--animation-normal) ease;
+}
+
+/* 主要内容区域样式 */
+[data-theme="hacker"] main,
+[data-theme="hacker"] .main-content,
+[data-theme="hacker"] div[class*="flex-1"] {
+  background: var(--color-bg-primary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* 覆盖所有白色背景 */
+[data-theme="hacker"] [class*="bg-white"],
+[data-theme="hacker"] [class*="bg-gray-50"],
+[data-theme="hacker"] [class*="from-gray-50"],
+[data-theme="hacker"] [class*="to-emerald-50"] {
+  background: var(--color-bg-secondary) !important;
+}
+
+/* 覆盖所有浅色文字 */
+[data-theme="hacker"] [class*="text-gray-600"],
+[data-theme="hacker"] [class*="text-gray-700"],
+[data-theme="hacker"] [class*="text-gray-800"],
+[data-theme="hacker"] [class*="text-gray-900"] {
+  color: var(--color-text-primary) !important;
+}
+
+/* 欢迎页面样式优化 */
+[data-theme="hacker"] .welcome-container {
+  background: transparent !important;
+  color: var(--color-text-primary) !important;
+}
+
+[data-theme="hacker"] .welcome-title {
+  color: var(--color-text-primary) !important;
+  text-shadow: 0 0 10px var(--color-primary);
+  animation: text-glow 3s infinite alternate;
+}
+
+[data-theme="hacker"] .welcome-subtitle {
+  color: var(--color-text-secondary) !important;
+}
+
+[data-theme="hacker"] .welcome-description {
+  color: var(--color-text-tertiary) !important;
+}
+
+/* 添加矩阵雨效果背景 */
+[data-theme="hacker"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(0, 255, 65, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(88, 166, 255, 0.03) 0%, transparent 50%),
+    linear-gradient(0deg, rgba(0, 255, 65, 0.01) 50%, transparent 50%);
+  background-size: 100px 100px, 150px 150px, 2px 20px;
+  animation: matrix-rain 20s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ============================================ */
+/* 动画定义 */
+/* ============================================ */
+@keyframes matrix-rain {
+  0% { background-position: 0 0, 0 0, 0 0; }
+  100% { background-position: 0 0, 0 0, 0 100vh; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { 
+    box-shadow: var(--shadow-glow);
+    border-color: var(--color-primary);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+    border-color: var(--color-primary-dim);
+  }
+}
+
+@keyframes text-glow {
+  0%, 100% { 
+    text-shadow: 0 0 5px var(--color-primary);
+  }
+  50% { 
+    text-shadow: 0 0 10px var(--color-primary), 0 0 20px var(--color-primary);
+  }
+}
+
+@keyframes scan-line {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ============================================ */
+/* 组件样式 */
+/* ============================================ */
+
+/* 按钮样式 */
+[data-theme="hacker"] .hacker-button {
+  background: linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 255, 65, 0.05) 100%);
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  font-family: inherit;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--animation-normal) ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+[data-theme="hacker"] .hacker-button:hover {
+  background: linear-gradient(135deg, rgba(0, 255, 65, 0.2) 0%, rgba(0, 255, 65, 0.1) 100%);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+[data-theme="hacker"] .hacker-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.3), transparent);
+  transition: left var(--animation-slow) ease;
+}
+
+[data-theme="hacker"] .hacker-button:hover::before {
+  left: 100%;
+}
+
+/* 卡片样式 */
+[data-theme="hacker"] .hacker-card {
+  background: linear-gradient(135deg, rgba(33, 38, 45, 0.8) 0%, rgba(13, 17, 23, 0.9) 100%);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 8px;
+  padding: 20px;
+  position: relative;
+  backdrop-filter: blur(10px);
+  transition: all var(--animation-normal) ease;
+}
+
+[data-theme="hacker"] .hacker-card:hover {
+  border-color: var(--color-border-glow);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+}
+
+[data-theme="hacker"] .hacker-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gradient-primary);
+  opacity: 0.6;
+}
+
+/* 输入框样式 */
+[data-theme="hacker"] .hacker-input,
+[data-theme="hacker"] textarea,
+[data-theme="hacker"] input[type="text"],
+[data-theme="hacker"] input[type="email"] {
+  background: rgba(13, 17, 23, 0.8) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  color: var(--color-text-primary) !important;
+  font-family: inherit !important;
+  transition: all var(--animation-normal) ease;
+}
+
+[data-theme="hacker"] .hacker-input:focus,
+[data-theme="hacker"] textarea:focus,
+[data-theme="hacker"] input:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(0, 255, 65, 0.2) !important;
+  outline: none !important;
+  background: rgba(13, 17, 23, 0.9) !important;
+}
+
+[data-theme="hacker"] .hacker-input::placeholder,
+[data-theme="hacker"] textarea::placeholder,
+[data-theme="hacker"] input::placeholder {
+  color: var(--color-text-tertiary) !important;
+}
+
+/* 发送按钮样式 */
+[data-theme="hacker"] button[type="submit"],
+[data-theme="hacker"] .send-button {
+  background: linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 255, 65, 0.05) 100%) !important;
+  border: 1px solid var(--color-primary) !important;
+  color: var(--color-primary) !important;
+}
+
+/* 全局组件样式覆盖 */
+/* 覆盖所有白色背景 */
+[data-theme="hacker"] [class*="bg-white"]:not([class*="text-"]) {
+  background: var(--color-bg-secondary) !important;
+}
+
+/* 覆盖所有边框颜色 */
+[data-theme="hacker"] [class*="border-gray"] {
+  border-color: var(--color-border-primary) !important;
+}
+
+[data-theme="hacker"] [class*="border-emerald"] {
+  border-color: var(--color-primary) !important;
+}
+
+/* 覆盖所有文字颜色 */
+[data-theme="hacker"] [class*="text-gray-300"],
+[data-theme="hacker"] [class*="text-gray-400"],
+[data-theme="hacker"] [class*="text-gray-500"] {
+  color: var(--color-text-tertiary) !important;
+}
+
+[data-theme="hacker"] [class*="text-emerald"] {
+  color: var(--color-primary) !important;
+}
+
+/* 覆盖焦点和悬停状态 */
+[data-theme="hacker"] [class*="focus-visible"]:focus-visible {
+  outline: none !important;
+  ring-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(0, 255, 65, 0.3) !important;
+}
+
+[data-theme="hacker"] [class*="hover"]:hover {
+  background-color: rgba(0, 255, 65, 0.1) !important;
+}
+
+/* Radix UI组件覆盖 */
+[data-theme="hacker"] [data-radix-popper-content-wrapper] {
+  background: var(--color-bg-secondary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* 下拉菜单样式 */
+[data-theme="hacker"] [role="menu"],
+[data-theme="hacker"] [role="menuitem"] {
+  background: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+  border-color: var(--color-border-primary) !important;
+}
+
+[data-theme="hacker"] [role="menuitem"]:hover {
+  background: rgba(0, 255, 65, 0.1) !important;
+  color: var(--color-primary) !important;
+}
+
+/* 侧边栏样式 */
+[data-theme="hacker"] .hacker-sidebar {
+  background: linear-gradient(180deg, rgba(13, 17, 23, 0.95) 0%, rgba(10, 14, 10, 0.98) 100%);
+  border-right: 1px solid var(--color-border-primary);
+  backdrop-filter: blur(20px);
+}
+
+/* 聊天气泡样式 */
+[data-theme="hacker"] .hacker-chat-user {
+  background: linear-gradient(135deg, rgba(88, 166, 255, 0.1) 0%, rgba(88, 166, 255, 0.05) 100%);
+  border: 1px solid rgba(88, 166, 255, 0.2);
+  color: var(--color-text-secondary);
+}
+
+[data-theme="hacker"] .hacker-chat-assistant {
+  background: linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 255, 65, 0.05) 100%);
+  border: 1px solid rgba(0, 255, 65, 0.2);
+  color: var(--color-text-primary);
+}
+
+/* 导航栏样式 */
+[data-theme="hacker"] .hacker-navbar {
+  background: rgba(13, 17, 23, 0.9);
+  border-bottom: 1px solid var(--color-border-primary);
+  backdrop-filter: blur(20px);
+}
+
+/* 加载动画 */
+[data-theme="hacker"] .hacker-loader {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--color-border-primary);
+  border-top: 2px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 代码风格文本 */
+[data-theme="hacker"] .hacker-code {
+  background: rgba(33, 38, 45, 0.6);
+  border: 1px solid var(--color-border-primary);
+  border-left: 3px solid var(--color-primary);
+  padding: 16px;
+  border-radius: 4px;
+  font-family: inherit;
+  color: var(--color-text-primary);
+  position: relative;
+}
+
+[data-theme="hacker"] .hacker-code::before {
+  content: '$ ';
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+/* 工具提示 */
+[data-theme="hacker"] .hacker-tooltip {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-primary);
+  color: var(--color-text-primary);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  box-shadow: var(--shadow-glow);
+}
+
+/* 状态指示器 */
+[data-theme="hacker"] .hacker-status-online {
+  width: 8px;
+  height: 8px;
+  background: var(--color-success);
+  border-radius: 50%;
+  animation: glow-pulse 2s infinite;
+}
+
+[data-theme="hacker"] .hacker-status-connecting {
+  width: 8px;
+  height: 8px;
+  background: var(--color-warning);
+  border-radius: 50%;
+  animation: blink 1s infinite;
+}
+
+/* 网格背景 */
+[data-theme="hacker"] .hacker-grid {
+  background-image: 
+    linear-gradient(rgba(0, 255, 65, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 65, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* 极客风滚动条 */
+[data-theme="hacker"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="hacker"] ::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+  border-radius: 4px;
+}
+
+[data-theme="hacker"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dim) 100%);
+  border-radius: 4px;
+  border: 1px solid var(--color-border-primary);
+}
+
+[data-theme="hacker"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+  box-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+}
+
+/* 选中文本样式 */
+[data-theme="hacker"] ::selection {
+  background: rgba(0, 255, 65, 0.3);
+  color: var(--color-text-primary);
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  [data-theme="hacker"] .hacker-card {
+    padding: 16px;
+  }
+  
+  [data-theme="hacker"] .hacker-button {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+  :root[data-theme="hacker"] {
+    --color-primary: #00ff00;
+    --color-text-primary: #ffffff;
+  }
+}
+
+/* 减少动画模式 */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="hacker"] * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

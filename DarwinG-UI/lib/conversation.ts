@@ -60,7 +60,7 @@ export interface Conversation {
   walletAddress: string;
 }
 
-const CONVERSATIONS_STORAGE_KEY = "darwin_conversations";
+const CONVERSATIONS_STORAGE_KEY = "davinci_conversations";
 
 // Get all conversations for current wallet
 export function getConversations(walletAddress: string): Conversation[] {
@@ -181,11 +181,22 @@ export async function syncConversationsFromDify(walletAddress: string): Promise<
   try {
     const response = await fetch(`/api/conversations?user=${encodeURIComponent(walletAddress)}&limit=100`);
     if (!response.ok) {
-      console.error('Failed to fetch conversations from Dify:', response.status);
-      return getConversations(walletAddress); // Fallback to local storage
+      console.error('Failed to fetch conversations from Dify:', response.status, response.statusText);
+      // ✅ 改进的错误处理：记录更多信息并尝试获取本地数据
+      const localConversations = getConversations(walletAddress);
+      console.log('Falling back to local conversations:', localConversations.length);
+      return localConversations;
     }
     
     const difyData: DifyConversationsResponse = await response.json();
+    
+    // ✅ 验证 API 响应数据的完整性
+    if (!difyData || !Array.isArray(difyData.data)) {
+      console.error('Invalid Dify API response format:', difyData);
+      const localConversations = getConversations(walletAddress);
+      console.log('Falling back to local conversations due to invalid API response');
+      return localConversations;
+    }
     
     // Convert Dify conversations to our format
     const difyConversations: Conversation[] = difyData.data.map(difyConv => ({
@@ -223,7 +234,10 @@ export async function syncConversationsFromDify(walletAddress: string): Promise<
     return mergedConversations;
   } catch (error) {
     console.error('Error syncing conversations from Dify:', error);
-    return getConversations(walletAddress); // Fallback to local storage
+    // ✅ 改进的错误处理：记录错误类型并提供更好的回退
+    const localConversations = getConversations(walletAddress);
+    console.log('Network error occurred, falling back to local conversations:', localConversations.length);
+    return localConversations;
   }
 }
 

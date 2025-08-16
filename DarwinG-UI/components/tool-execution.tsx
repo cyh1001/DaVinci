@@ -27,8 +27,30 @@ export interface ToolExecutionDisplayProps {
 export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayProps) {
   const [expandedTools, setExpandedTools] = React.useState<Set<string>>(new Set());
   const [collapsingTools, setCollapsingTools] = React.useState<Set<string>>(new Set());
+  const [currentTheme, setCurrentTheme] = React.useState<'light' | 'hacker'>('light');
   const collapseTimeouts = React.useRef<Map<string, NodeJS.Timeout>>(new Map());
   const prevStatusRef = React.useRef<Map<string, string>>(new Map());
+
+  // 检测当前主题
+  React.useEffect(() => {
+    const theme = document.documentElement.getAttribute('data-theme') as 'light' | 'hacker';
+    setCurrentTheme(theme || 'light');
+    
+    // 监听主题变化
+    const observer = new MutationObserver(() => {
+      const newTheme = document.documentElement.getAttribute('data-theme') as 'light' | 'hacker';
+      setCurrentTheme(newTheme || 'light');
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
+    
+    return () => observer.disconnect();
+  }, []);
+
+  const isHacker = currentTheme === 'hacker';
 
   // Auto-expand rounds when they start and auto-collapse when they complete
   React.useEffect(() => {
@@ -179,13 +201,25 @@ export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayP
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'start':
-        return <Loader2 className="h-3 w-3 animate-spin text-blue-600" />;
+        return <Loader2 className={cn(
+          "h-3 w-3 animate-spin",
+          isHacker ? "text-[#58a6ff]" : "text-blue-600"
+        )} />;
       case 'success':
-        return <CheckCircle className="h-3 w-3 text-green-600" />;
+        return <CheckCircle className={cn(
+          "h-3 w-3",
+          isHacker ? "text-[#00ff41]" : "text-green-600"
+        )} />;
       case 'error':
-        return <XCircle className="h-3 w-3 text-red-600" />;
+        return <XCircle className={cn(
+          "h-3 w-3",
+          isHacker ? "text-[#ff4757]" : "text-red-600"
+        )} />;
       default:
-        return <Clock className="h-3 w-3 text-gray-400" />;
+        return <Clock className={cn(
+          "h-3 w-3",
+          isHacker ? "text-[#7d8590]" : "text-gray-400"
+        )} />;
     }
   };
 
@@ -209,33 +243,49 @@ export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayP
           <div 
             key={mainRound.id} 
             className={cn(
-              "border border-gray-200/70 rounded-xl overflow-hidden transition-all duration-300 ease-in-out shadow-sm hover:shadow-md",
-              "bg-white/50 backdrop-blur-sm",
-              isCollapsing && "opacity-85 scale-[0.99] border-gray-300 shadow-none",
-              mainRound.status === 'start' && "border-blue-200/60 shadow-blue-100/50",
-              mainRound.status === 'success' && "border-green-200/60",
-              mainRound.status === 'error' && "border-red-200/60"
+              "border rounded-xl overflow-hidden transition-all duration-300 ease-in-out shadow-sm hover:shadow-md backdrop-blur-sm",
+              isHacker 
+                ? "bg-[#161b22]/80 border-[#30363d]" 
+                : "bg-white/50 border-gray-200/70",
+              isCollapsing && (isHacker ? "opacity-85 scale-[0.99] border-[#30363d] shadow-none" : "opacity-85 scale-[0.99] border-gray-300 shadow-none"),
+              mainRound.status === 'start' && (isHacker ? "border-[#58a6ff]/50 shadow-[0_0_10px_rgba(88,166,255,0.2)]" : "border-blue-200/60 shadow-blue-100/50"),
+              mainRound.status === 'success' && (isHacker ? "border-[#00ff41]/50 shadow-[0_0_10px_rgba(0,255,65,0.2)]" : "border-green-200/60"),
+              mainRound.status === 'error' && (isHacker ? "border-[#ff4757]/50 shadow-[0_0_10px_rgba(255,71,87,0.2)]" : "border-red-200/60")
             )}
           >
             <button
               onClick={() => toggleExpanded(mainRound.id)}
               className={cn(
-                "w-full flex items-center justify-between bg-gradient-to-r from-gray-50/80 to-gray-100/40 hover:from-gray-100/90 hover:to-gray-150/50 transition-all duration-300",
-                "backdrop-blur-sm border-b border-gray-200/40",
-                isExpanded ? "px-4 py-2" : "px-4 py-1", // Thinner for both states
-                isCollapsing && "bg-gray-100 opacity-90",
-                mainRound.status === 'start' && "from-blue-50/60 to-blue-100/30 hover:from-blue-100/70 hover:to-blue-150/40",
-                mainRound.status === 'success' && "from-green-50/60 to-green-100/30 hover:from-green-100/70 hover:to-green-150/40",
-                mainRound.status === 'error' && "from-red-50/60 to-red-100/30 hover:from-red-100/70 hover:to-red-150/40"
+                "w-full flex items-center justify-between transition-all duration-300 backdrop-blur-sm border-b",
+                isHacker 
+                  ? "bg-gradient-to-r from-[#0d1117]/80 to-[#161b22]/40 hover:from-[#161b22]/90 hover:to-[#21262d]/50 border-[#30363d]/40"
+                  : "bg-gradient-to-r from-gray-50/80 to-gray-100/40 hover:from-gray-100/90 hover:to-gray-150/50 border-gray-200/40",
+                isExpanded ? "px-4 py-2" : "px-4 py-1",
+                isCollapsing && (isHacker ? "bg-[#161b22] opacity-90" : "bg-gray-100 opacity-90"),
+                mainRound.status === 'start' && (isHacker 
+                  ? "from-[#58a6ff]/10 to-[#58a6ff]/5 hover:from-[#58a6ff]/20 hover:to-[#58a6ff]/10"
+                  : "from-blue-50/60 to-blue-100/30 hover:from-blue-100/70 hover:to-blue-150/40"),
+                mainRound.status === 'success' && (isHacker
+                  ? "from-[#00ff41]/10 to-[#00ff41]/5 hover:from-[#00ff41]/20 hover:to-[#00ff41]/10"
+                  : "from-green-50/60 to-green-100/30 hover:from-green-100/70 hover:to-green-150/40"),
+                mainRound.status === 'error' && (isHacker
+                  ? "from-[#ff4757]/10 to-[#ff4757]/5 hover:from-[#ff4757]/20 hover:to-[#ff4757]/10"
+                  : "from-red-50/60 to-red-100/30 hover:from-red-100/70 hover:to-red-150/40")
               )}
             >
               <div className="flex items-center gap-2">
                 {getStatusIcon(mainRound.status)}
                 <div className="flex items-center gap-1">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <span className={cn(
+                    "text-xs font-medium uppercase tracking-wide",
+                    isHacker ? "text-[#7d8590]" : "text-gray-500"
+                  )}>
                     Round
                   </span>
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide tabular-nums">
+                  <span className={cn(
+                    "text-xs font-medium uppercase tracking-wide tabular-nums",
+                    isHacker ? "text-[#00ff41]" : "text-gray-500"
+                  )}>
                     {(mainRound.status === 'error' ? roundKey.replace(' (Interrupted)', '') : roundKey)
                       .replace(/^ROUND (\d+)/, (match, number) => number)}
                   </span>

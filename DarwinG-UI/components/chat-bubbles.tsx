@@ -62,7 +62,7 @@ export function MessageBubble({
       if (Array.isArray(props?.children)) {
         return props.children
           .map((child: any) => extractTextFromElement(child))
-          .filter(text => typeof text === 'string' && text.trim().length > 0)
+          .filter((text: string) => typeof text === 'string' && text.trim().length > 0)
           .join('');
       }
       if (props?.children) {
@@ -74,7 +74,7 @@ export function MessageBubble({
     if (Array.isArray(element)) {
       return element
         .map(child => extractTextFromElement(child))
-        .filter(text => typeof text === 'string' && text.trim().length > 0)
+        .filter((text: string) => typeof text === 'string' && text.trim().length > 0)
         .join('');
     }
     
@@ -150,7 +150,10 @@ export function MessageBubble({
           "backdrop-blur-sm transform hover:scale-[1.01]",
           isUser
             ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:from-emerald-600 hover:to-emerald-700"
-            : "bg-gradient-to-br from-white to-gray-50/80 text-gray-800 shadow-md hover:shadow-lg border border-gray-200/50 hover:border-gray-300/50"
+            : "bg-gradient-to-br from-white to-gray-50/80 text-gray-800 shadow-md hover:shadow-lg border border-gray-200/50 hover:border-gray-300/50",
+          // 极客主题样式
+          isUser && "[data-theme=hacker]_&:hacker-chat-user [data-theme=hacker]_&:bg-gradient-to-br [data-theme=hacker]_&:from-[#58a6ff]/20 [data-theme=hacker]_&:to-[#58a6ff]/10 [data-theme=hacker]_&:text-[#58a6ff] [data-theme=hacker]_&:border [data-theme=hacker]_&:border-[#58a6ff]/30 [data-theme=hacker]_&:shadow-[0_0_15px_rgba(88,166,255,0.2)]",
+          !isUser && "[data-theme=hacker]_&:hacker-chat-assistant [data-theme=hacker]_&:bg-gradient-to-br [data-theme=hacker]_&:from-[#00ff41]/10 [data-theme=hacker]_&:to-[#00ff41]/5 [data-theme=hacker]_&:text-[#00ff41] [data-theme=hacker]_&:border [data-theme=hacker]_&:border-[#00ff41]/30 [data-theme=hacker]_&:shadow-[0_0_15px_rgba(0,255,65,0.2)]"
         )}
       >
         {isAssistant ? (

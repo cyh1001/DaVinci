@@ -1,16 +1,16 @@
-# 基于 AI 的加密电商生态系统  
-# AI-Powered Crypto E-commerce Ecosystem
+# 基于 AI 的多智能体电商生态系统  
+# AI-Powered Multi-Agent E-commerce Ecosystem
 
-Darwin 是一个由 AI 驱动的加密电商生态系统，任何人都能借此建立一个全球化、自动化、持续进化的在线业务。全天候运行你的电商商店，实现全自动化和持续盈利。  
-Darwin is an AI-powered crypto e-commerce ecosystem that empowers anyone to build a global, automated, and continuously evolving online business. Run your store 24/7 with full automation and generate profits effortlessly.
+DaVinci 是一个由 AI 驱动的多智能体电商生态系统，任何人都能借此建立一个全球化、自动化、持续进化的在线业务。全天候运行你的电商商店，实现全自动化和持续盈利。  
+DaVinci is an AI-powered multi-agent e-commerce ecosystem that empowers anyone to build a global, automated, and continuously evolving online business. Run your store 24/7 with full automation and generate profits effortlessly.
 
 ---
 
 ## 愿景：AI 成为你的商业伙伴  
 ## Vision: AI as Your Business Co-founder
 
-Darwin 将 AI 转化为你的智能联合创始人——自动化决策、运营与增长。你专注于创意与产品，AI 则负责采购、定价、履约、营销与客户支持。  
-Darwin transforms AI into your intelligent co-founder—automating decisions, operations, and growth. You focus on creativity and products; AI handles sourcing, pricing, fulfillment, marketing, and customer service.
+DaVinci 将 AI 转化为你的智能联合创始人——自动化决策、运营与增长。你专注于创意与产品，AI 则负责采购、定价、履约、营销与客户支持。  
+DaVinci transforms AI into your intelligent co-founder—automating decisions, operations, and growth. You focus on creativity and products; AI handles sourcing, pricing, fulfillment, marketing, and customer service.
 
 ---
 
@@ -72,11 +72,11 @@ Specialized AI agents cover the full spectrum of operations:
 
 ---
 
-## Darwin 如何持续进化  
-## How Darwin Evolves
+## DaVinci 如何持续进化  
+## How DaVinci Evolves
 
-Darwin 通过机器学习不断优化自身：  
-Darwin continuously improves itself through machine learning:  
+DaVinci 通过机器学习不断优化自身：  
+DaVinci continuously improves itself through machine learning:  
 - 交易数据学习:每一次销售、成本与互动都成为 Agent 迭代的数据
 - Transaction-driven learning: every sale, cost, and customer interaction becomes training data for the AI agents to evolve.
 - 实时优化：动态定价与趋势预测  
@@ -86,8 +86,8 @@ Darwin continuously improves itself through machine learning:
 - 预测分析：客户画像与行为预测  
 - Predictive Analytics: Customer profiling and behavioral prediction  
 
-这使 Darwin 成为一个能够学习、盈利、进化的 AI 电商系统。  
-Darwin is an AI commerce system that learns, earns, and evolves alongside your business.
+这使 DaVinci 成为一个能够学习、盈利、进化的 AI 电商系统。  
+DaVinci is an AI commerce system that learns, earns, and evolves alongside your business.
 
 ---
 
@@ -123,7 +123,7 @@ This project is licensed under the MIT License. See the LICENSE file for more de
 
 ---
 
-由 Darwin AI 团队倾力打造  
-Built with by the Darwin AI Team  
+由 DaVinci AI 团队倾力打造  
+Built with by the DaVinci AI Team  
 用人工智能赋能未来的自主电商世界  
 Empowering the future of autonomous e-commerce through artificial intelligence
