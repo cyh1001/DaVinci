@@ -36,6 +36,7 @@ If OAuth configuration fails, the server will run without authentication for dev
 """
 
 import os
+import sys
 import json
 import requests
 import pandas as pd
@@ -50,7 +51,9 @@ from dotenv import load_dotenv
 
 # Coinbase CDP SDK imports
 try:
-    from cdp import Cdp, Wallet
+    import cdp
+    from cdp import CdpClient
+    from cdp.evm_token_balances import ListEvmTokenBalancesNetwork
     CDP_AVAILABLE = True
 except ImportError:
     print("Warning: Coinbase CDP SDK not installed. Install with: pip install cdp-sdk", file=sys.stderr)
@@ -73,7 +76,7 @@ from utils.internal_tools import create_product_listing_internal
 storage = DraftStorage()
 
 # Configure Coinbase CDP
-cdp_configured = False
+cdp_client = None
 if CDP_AVAILABLE:
     try:
         # Try to configure CDP from environment variables
@@ -81,8 +84,7 @@ if CDP_AVAILABLE:
         api_key_private_key = os.getenv("CDP_API_KEY_PRIVATE_KEY")
         
         if api_key_name and api_key_private_key:
-            Cdp.configure(api_key_name, api_key_private_key)
-            cdp_configured = True
+            cdp_client = CdpClient(api_key_name=api_key_name, private_key=api_key_private_key)
             print("✅ Coinbase CDP configured successfully", file=sys.stderr)
         else:
             print("⚠️ CDP API keys not found in environment variables", file=sys.stderr)
@@ -2013,28 +2015,61 @@ def get_wallet_balance(
     if not CDP_AVAILABLE:
         return "❌ Coinbase CDP SDK not available. Please install with: pip install cdp-sdk"
     
-    if not cdp_configured:
+    if cdp_client is None:
         return "❌ Coinbase CDP not configured. Please set CDP_API_KEY_NAME and CDP_API_KEY_PRIVATE_KEY environment variables"
     
     try:
-        # Note: This is a simplified example for demonstration
-        # In a real implementation, you would use the CDP SDK to query wallet balances
-        return f"""
+        # Use CDP Data API to get actual token balances
+        from cdp.evm_client import EvmClient
+        
+        # Convert network name to CDP format
+        network_mapping = {
+            "base-sepolia": "base-sepolia",
+            "ethereum-sepolia": "ethereum-sepolia"
+        }
+        
+        if network not in network_mapping:
+            return f"❌ Unsupported network: {network}. Supported: {list(network_mapping.keys())}"
+        
+        # Create EVM client and get balances
+        evm_client = EvmClient(cdp_client)
+        
+        # Get token balances for the address
+        balances = evm_client.list_evm_token_balances(
+            network_id=network_mapping[network],
+            address=wallet_address
+        )
+        
+        if not balances or not balances.data:
+            return f"""
 ✅ **Wallet Balance Query**
 📍 **Address**: {wallet_address}
 🌐 **Network**: {network}
 
-⚠️ **Demo Implementation**
-This is a basic implementation for ETH Global NYC 2025 hackathon demonstration.
-- CDP SDK integrated successfully
-- Configuration validated
-- Ready for full balance query implementation
+💰 **Balances**: No tokens found or wallet is empty
+            """.strip()
+        
+        # Format the results
+        result = f"""
+✅ **Wallet Balance Query**
+📍 **Address**: {wallet_address}
+🌐 **Network**: {network}
 
-🔧 **Next Steps**:
-- Implement actual balance queries using CDP Data APIs
-- Add support for multiple token types
-- Include USD value conversion
-        """.strip()
+💰 **Token Balances**:
+"""
+        
+        for balance in balances.data[:10]:  # Limit to top 10 tokens
+            token_name = balance.token.name or "Unknown"
+            token_symbol = balance.token.symbol or "???"
+            amount = balance.amount
+            decimals = balance.token.decimals or 18
+            
+            # Convert from smallest unit to readable format
+            readable_amount = float(amount) / (10 ** decimals)
+            
+            result += f"\n• **{token_symbol}** ({token_name}): {readable_amount:.6f}"
+        
+        return result.strip()
         
     except Exception as e:
         return f"❌ Error querying wallet balance: {str(e)}"
