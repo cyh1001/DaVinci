@@ -17,6 +17,13 @@ export interface ToolExecution {
   parentId?: string;
   error?: string;
   round?: string;
+  toolInput?: any;
+  observation?: any;
+  responseData?: any;
+  position?: number;
+  thought?: string;
+  nodeId?: string;
+  nodeExecutionId?: string;
 }
 
 export interface ToolExecutionDisplayProps {
@@ -26,6 +33,7 @@ export interface ToolExecutionDisplayProps {
 
 export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayProps) {
   const [expandedTools, setExpandedTools] = React.useState<Set<string>>(new Set());
+  const [expandedToolDetails, setExpandedToolDetails] = React.useState<Set<string>>(new Set());
   const [collapsingTools, setCollapsingTools] = React.useState<Set<string>>(new Set());
   const [currentTheme, setCurrentTheme] = React.useState<'light' | 'hacker'>('light');
   const collapseTimeouts = React.useRef<Map<string, NodeJS.Timeout>>(new Map());
@@ -198,6 +206,16 @@ export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayP
     setExpandedTools(newExpanded);
   };
 
+  const toggleToolDetails = (toolId: string) => {
+    const newExpanded = new Set(expandedToolDetails);
+    if (newExpanded.has(toolId)) {
+      newExpanded.delete(toolId);
+    } else {
+      newExpanded.add(toolId);
+    }
+    setExpandedToolDetails(newExpanded);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'start':
@@ -226,6 +244,16 @@ export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayP
   const formatElapsedTime = (elapsedTime?: number) => {
     if (!elapsedTime) return '';
     return elapsedTime < 1 ? `${(elapsedTime * 1000).toFixed(0)}ms` : `${elapsedTime.toFixed(1)}s`;
+  };
+
+  const formatToolData = (data: any) => {
+    if (!data) return '';
+    if (typeof data === 'string') return data;
+    return JSON.stringify(data, null, 2);
+  };
+
+  const hasToolData = (tool: ToolExecution) => {
+    return tool.toolInput || tool.observation || tool.responseData || tool.thought;
   };
 
   if (tools.length === 0) return null;
@@ -287,7 +315,7 @@ export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayP
                     isHacker ? "text-[#00ff41]" : "text-gray-500"
                   )}>
                     {(mainRound.status === 'error' ? roundKey.replace(' (Interrupted)', '') : roundKey)
-                      .replace(/^ROUND (\d+)/, (match, number) => number)}
+                      .replace(/^ROUND (\d+)/, (_, number) => number)}
                   </span>
                 </div>
                 {mainRound.status === 'start' && (
@@ -338,42 +366,134 @@ export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayP
               isCollapsing && "bg-gray-50"
             )}>
                 {/* Show child tools */}
-                {childTools.map((tool) => (
-                  <div key={tool.id} className="px-6 py-3 border-b border-gray-100/60 last:border-b-0 hover:bg-white/40 transition-colors duration-200">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2 flex-1">
-                        {getStatusIcon(tool.status)}
-                        <span className={cn(
-                          "text-sm",
-                          tool.status === 'start' ? "text-blue-700" : "text-gray-600"
-                        )}>
-                          {tool.label.startsWith('CALL ') 
-                            ? `🔧 ${tool.label.replace('CALL ', '')}`
-                            : tool.label.includes('Thought')
-                            ? `💭 AI Thinking`
-                            : tool.label
-                          }
-                        </span>
-                        {tool.status === 'start' && (
-                          <span className="text-xs text-blue-600 animate-pulse">
-                            Running...
-                          </span>
+                {childTools.map((tool) => {
+                  const isDetailsExpanded = expandedToolDetails.has(tool.id);
+                  const showData = hasToolData(tool);
+                  
+                  return (
+                    <div key={tool.id} className="border-b border-gray-100/60 last:border-b-0">
+                      <div 
+                        className={cn(
+                          "px-6 py-3 hover:bg-white/40 transition-colors duration-200",
+                          showData && "cursor-pointer"
                         )}
-                        {tool.status === 'error' && (
-                          <span className="text-xs text-red-600 font-medium">
-                            Interrupted
-                          </span>
-                        )}
+                        onClick={showData ? () => toggleToolDetails(tool.id) : undefined}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 flex-1">
+                            {getStatusIcon(tool.status)}
+                            <span className={cn(
+                              "text-sm",
+                              tool.status === 'start' ? "text-blue-700" : "text-gray-600"
+                            )}>
+                              {tool.label.startsWith('CALL ') 
+                                ? `🔧 ${tool.label.replace('CALL ', '')}`
+                                : tool.label.includes('Thought')
+                                ? `💭 AI Thinking`
+                                : tool.label
+                              }
+                            </span>
+                            {tool.status === 'start' && (
+                              <span className="text-xs text-blue-600 animate-pulse">
+                                Running...
+                              </span>
+                            )}
+                            {tool.status === 'error' && (
+                              <span className="text-xs text-red-600 font-medium">
+                                Interrupted
+                              </span>
+                            )}
+                            {showData && (
+                              <span className="text-xs text-gray-500 bg-blue-100/50 px-2 py-0.5 rounded-full">
+                                Details
+                              </span>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {tool.elapsedTime && tool.status === 'success' && (
+                              <span className="text-xs text-gray-500 font-mono bg-gray-100/50 px-1.5 py-0.5 rounded">
+                                {formatElapsedTime(tool.elapsedTime)}
+                              </span>
+                            )}
+                            {showData && (
+                              <ChevronRight className={cn(
+                                "h-3 w-3 text-gray-400 transition-transform duration-200",
+                                isDetailsExpanded && "rotate-90"
+                              )} />
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      
-                      {tool.elapsedTime && tool.status === 'success' && (
-                        <span className="text-xs text-gray-500 font-mono bg-gray-100/50 px-1.5 py-0.5 rounded">
-                          {formatElapsedTime(tool.elapsedTime)}
-                        </span>
+
+                      {/* Tool details section */}
+                      {showData && (
+                        <div className={cn(
+                          "overflow-hidden transition-all duration-300 ease-in-out",
+                          isDetailsExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+                        )}>
+                          <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100/40 space-y-3">
+                            {tool.thought && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-600 mb-1 uppercase tracking-wide">
+                                  💭 AI Thought
+                                </div>
+                                <div className={cn(
+                                  "text-xs border border-gray-200/60 rounded-md p-3 max-h-40 overflow-y-auto",
+                                  isHacker ? "bg-[#0d1117] border-[#30363d] text-[#c9d1d9]" : "bg-white text-gray-800"
+                                )}>
+                                  {tool.thought}
+                                </div>
+                              </div>
+                            )}
+
+                            {tool.toolInput && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-600 mb-1 uppercase tracking-wide">
+                                  🔧 Tool Input
+                                </div>
+                                <pre className={cn(
+                                  "text-xs bg-white border border-gray-200/60 rounded-md p-3 overflow-x-auto max-h-40 overflow-y-auto",
+                                  isHacker ? "bg-[#0d1117] border-[#30363d] text-[#c9d1d9]" : "bg-white text-gray-800"
+                                )}>
+                                  {formatToolData(tool.toolInput)}
+                                </pre>
+                              </div>
+                            )}
+
+                            {tool.observation && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-600 mb-1 uppercase tracking-wide">
+                                  👁️ Observation
+                                </div>
+                                <pre className={cn(
+                                  "text-xs bg-white border border-gray-200/60 rounded-md p-3 overflow-x-auto max-h-40 overflow-y-auto",
+                                  isHacker ? "bg-[#0d1117] border-[#30363d] text-[#c9d1d9]" : "bg-white text-gray-800"
+                                )}>
+                                  {formatToolData(tool.observation)}
+                                </pre>
+                              </div>
+                            )}
+
+                            {tool.responseData && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-600 mb-1 uppercase tracking-wide">
+                                  📋 Response Data
+                                </div>
+                                <pre className={cn(
+                                  "text-xs bg-white border border-gray-200/60 rounded-md p-3 overflow-x-auto max-h-40 overflow-y-auto",
+                                  isHacker ? "bg-[#0d1117] border-[#30363d] text-[#c9d1d9]" : "bg-white text-gray-800"
+                                )}>
+                                  {formatToolData(tool.responseData)}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 
                 {/* Round summary */}
                 <div className={cn(
@@ -381,7 +501,7 @@ export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayP
                   isCollapsing && "bg-gray-100"
                 )}>
                   <div className="space-y-1">
-                    <div>Round: {roundKey.replace(/^ROUND (\d+)/, (match, number) => `Round ${number}`)}</div>
+                    <div>Round: {roundKey.replace(/^ROUND (\d+)/, (_, number) => `Round ${number}`)}</div>
                     {mainRound.elapsedTime && (
                       <div>Total Duration: {formatElapsedTime(mainRound.elapsedTime)}</div>
                     )}

@@ -240,20 +240,32 @@ export async function POST(req: Request) {
                       // Enhanced logging and streaming for agent_log events
                       if (parsed.event === 'agent_log') {
                         const logData = parsed.data;
+                        
+                        // Log full agent_log structure for debugging
+                        console.log("🔧 FULL AGENT_LOG:", logData);
+                        
+                        // Extract tool data from the nested structure
+                        const toolName = logData.data?.tool_name || logData.data?.output?.tool_call_name;
+                        const toolInput = logData.data?.tool_input || logData.data?.output?.tool_call_input;
+                        const toolResponse = logData.data?.observation || logData.data?.output?.tool_response;
+                        const outputData = logData.data?.output;
+                        
                         console.log("🔧 AGENT_LOG:", {
                           label: logData.label,
                           status: logData.status,
-                          tool_name: logData.data?.tool_name,
+                          tool_name: toolName,
+                          tool_response: toolResponse,
                           provider: logData.metadata?.provider,
                           parent_id: logData.parent_id,
-                          elapsed_time: logData.metadata?.elapsed_time
+                          elapsed_time: logData.metadata?.elapsed_time,
+                          has_output: !!outputData
                         });
                         
                         // Stream tool execution events to client using AI SDK compatible format
                         if (logData.label && (logData.label.startsWith('CALL ') || logData.label.startsWith('ROUND ') || logData.label.includes('Thought'))) {
                           const toolData = {
                             id: logData.id,
-                            name: logData.data?.tool_name || '',
+                            name: toolName || '',
                             label: logData.label,
                             status: logData.status,
                             startTime: logData.metadata?.started_at || Date.now(),
@@ -263,7 +275,12 @@ export async function POST(req: Request) {
                             icon: logData.metadata?.icon,
                             parentId: logData.parent_id,
                             error: logData.error,
-                            round: logData.label.startsWith('ROUND ') ? logData.label : undefined
+                            round: logData.label.startsWith('ROUND ') ? logData.label : undefined,
+                            toolInput: toolInput,
+                            observation: toolResponse,
+                            responseData: outputData,
+                            nodeId: logData.node_id,
+                            nodeExecutionId: logData.node_execution_id
                           };
                           
                           // Use AI SDK compatible data-* format
