@@ -91,9 +91,35 @@ export default function Page() {
   // }, []);
 
 
+  // Ref to track processed blockchain syncs to prevent duplicates
+  const processedBlockchainSyncs = React.useRef(new Set<string>());
+
   // Function to check tool executions for blockchain sync triggers
   const triggerBlockchainSyncCheck = React.useCallback(async (messageId: string, tools: ToolExecution[]) => {
-    console.log('🔍 Checking tools for blockchain sync triggers:', tools.map(t => `${t.label}(${t.status})`));
+    // Create unique key for this sync attempt
+    const syncKey = `${messageId}_${tools.map(t => t.id).join('_')}`;
+    
+    // Check if we've already processed this exact combination
+    if (processedBlockchainSyncs.current.has(syncKey)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 Skipping duplicate blockchain sync check for:', syncKey);
+      }
+      return;
+    }
+    
+    // Mark as processed to prevent duplicates
+    processedBlockchainSyncs.current.add(syncKey);
+    
+    // Clean up old sync keys (keep only last 50 to prevent memory growth)
+    if (processedBlockchainSyncs.current.size > 50) {
+      const keysArray = Array.from(processedBlockchainSyncs.current);
+      const keysToRemove = keysArray.slice(0, keysArray.length - 50);
+      keysToRemove.forEach(key => processedBlockchainSyncs.current.delete(key));
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Checking tools for blockchain sync triggers:', tools.map(t => `${t.label}(${t.status})`));
+    }
     
     // Look for tools that contain draft_to_listing calls - check multiple sources
     const draftToListingTool = tools.find(tool => {
@@ -221,7 +247,22 @@ export default function Page() {
           
           console.log('✅ All required fields present, triggering Flow EVM blockchain sync...');
           
-          // Step 5: Create listing data from the successful tool response (no fallbacks needed)
+          // Step 5: Check if this SKU has already been synced to prevent duplicates
+          const sku = `FM-${responseData.category.substring(0, 3).toUpperCase()}-${responseData.eid.substring(0, 6)}`;
+          const skuPattern = new RegExp(`${sku}-\\d{3}`);
+          
+          // Check localStorage for existing SKUs with this pattern
+          const existingSKUs = JSON.parse(localStorage.getItem('fm_onchain_skus') || '[]');
+          const alreadySynced = existingSKUs.some((existingSku: string) => skuPattern.test(existingSku));
+          
+          if (alreadySynced) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('⏭️ SKU pattern already synced, skipping duplicate sync:', sku);
+            }
+            return;
+          }
+          
+          // Step 6: Create listing data from the successful tool response (no fallbacks needed)
           const listingData = {
             success: true,
             category: responseData.category,
@@ -236,16 +277,20 @@ export default function Page() {
             originalData: responseData
           };
           
-          console.log('🚀 Triggering Flow EVM testnet blockchain sync for message:', messageId);
-          console.log('📦 Listing data with real values:', {
-            category: listingData.category,
-            eid: listingData.eid,
-            price: listingData.price,
-            success: listingData.success
-          });
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🚀 Triggering Flow EVM testnet blockchain sync for message:', messageId);
+            console.log('📦 Listing data with real values:', {
+              category: listingData.category,
+              eid: listingData.eid,
+              price: listingData.price,
+              success: listingData.success
+            });
+          }
           
-          // Step 5: Execute blockchain sync to Flow EVM testnet
-          console.log('🔄 Starting blockchain sync for message:', messageId);
+          // Step 7: Execute blockchain sync to Flow EVM testnet
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔄 Starting blockchain sync for message:', messageId);
+          }
           
           // Set this as the current syncing message
           setCurrentSyncMessageId(messageId);
@@ -253,7 +298,9 @@ export default function Page() {
           try {
             // Start blockchain sync - hook will manage status and update UI via useEffect
             await syncListing(listingData);
-            console.log('✅ Flow EVM testnet blockchain sync call completed!');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ Flow EVM testnet blockchain sync call completed!');
+            }
             
           } catch (error) {
             console.error('❌ Flow EVM testnet blockchain sync failed:', error);
@@ -447,17 +494,19 @@ export default function Page() {
       const existing = localStorage.getItem(key);
       const allToolExecutions = existing ? JSON.parse(existing) : {};
       
-      // Store by conversation ID and message position instead of message ID
-      // This way tools persist across message ID changes
-      // ✅ 确保索引不为负数
+      // Use stable message ID as primary key, with conversation context as backup
+      const primaryKey = messageId;
       const messageIndex = Math.max(0, messages.length - 1);
-      const conversationKey = `${conversationId}_msg_${messageIndex}`; // Use message position
-      allToolExecutions[conversationKey] = { messageId, tools };
+      const fallbackKey = `${conversationId}_msg_${messageIndex}`;
+      
+      // Store with both keys for reliability
+      allToolExecutions[primaryKey] = { messageId, tools, conversationId, messageIndex, timestamp: Date.now() };
+      allToolExecutions[fallbackKey] = { messageId, tools, conversationId, messageIndex, timestamp: Date.now() };
       
       localStorage.setItem(key, JSON.stringify(allToolExecutions));
-      console.log('💾 SAVED tool executions for conversation:', conversationKey, 'message:', messageId, 'tools count:', tools.length);
-      console.log('💾 Full localStorage key:', key);
-      console.log('💾 Tools saved:', tools.map(t => `${t.label}(${t.status})`));
+      if (process.env.NODE_ENV === 'development') {
+        console.log('💾 SAVED tool executions:', primaryKey, 'tools:', tools.length);
+      }
     } catch (error) {
       console.error('Error saving tool executions:', error);
     }
@@ -468,20 +517,22 @@ export default function Page() {
     const key = `toolExecutions_${walletAddress}`;
     try {
       const stored = localStorage.getItem(key);
-      console.log('🔍 LOADING tool executions from localStorage, key:', key);
-      console.log('🔍 Raw stored data:', stored);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 LOADING tool executions from localStorage, key:', key);
+      }
       if (stored) {
         const parsed = JSON.parse(stored);
-        console.log('🔍 Parsed data:', parsed);
         const map = new Map();
-        Object.entries(parsed).forEach(([messageId, tools]) => {
-          map.set(messageId, tools as ToolExecution[]);
-          console.log('🔍 Loaded tools for message:', messageId, 'count:', (tools as ToolExecution[]).length);
+        Object.entries(parsed).forEach(([storageKey, data]) => {
+          if (data && typeof data === 'object' && 'tools' in data) {
+            const toolData = data as { messageId: string; tools: ToolExecution[]; conversationId?: string; messageIndex?: number; timestamp?: number };
+            map.set(storageKey, toolData.tools);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🔍 Loaded tools for key:', storageKey, 'count:', toolData.tools.length);
+            }
+          }
         });
-        console.log('🔍 Final map size:', map.size);
         return map;
-      } else {
-        console.log('🔍 No stored data found');
       }
     } catch (error) {
       console.error('Error loading tool executions:', error);
@@ -610,28 +661,59 @@ export default function Page() {
         }
 
         convertedMessages.forEach((msg, index) => {
-          console.log('🔍 Checking message at index:', index, 'ID:', msg.id, 'role:', msg.role);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔍 Checking message at index:', index, 'ID:', msg.id, 'role:', msg.role);
+          }
           
-          // Try to find tools by conversation ID and message position
+          // Try multiple key strategies for tool lookup
+          const primaryKey = msg.id;
           const conversationKey = `${conversationId}_msg_${index}`;
-          console.log('🔍 Looking for conversation key:', conversationKey);
+          const fallbackKeys = [`assistant_${msg.id}`, `user_${msg.id}`];
           
           let tools = null;
           
-          // Look through stored data for this conversation key
+          // Strategy 1: Try primary message ID first
           for (const [storageKey, storageData] of Object.entries(allStoredData)) {
-            if (storageKey === conversationKey) {
+            if (storageKey === primaryKey && storageData && typeof storageData === 'object' && 'tools' in storageData) {
               tools = (storageData as any).tools;
-              console.log('✅ Found tools by conversation position:', conversationKey, 'tools:', tools?.length || 0);
+              if (process.env.NODE_ENV === 'development') {
+                console.log('✅ Found tools by primary key:', primaryKey, 'tools:', tools?.length || 0);
+              }
               break;
             }
           }
           
-          if (tools && tools.length > 0) {
-            console.log('✅ Loading tools for message:', msg.id, 'tools:', tools.length);
+          // Strategy 2: Try conversation position key
+          if (!tools) {
+            for (const [storageKey, storageData] of Object.entries(allStoredData)) {
+              if (storageKey === conversationKey && storageData && typeof storageData === 'object' && 'tools' in storageData) {
+                tools = (storageData as any).tools;
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('✅ Found tools by conversation position:', conversationKey, 'tools:', tools?.length || 0);
+                }
+                break;
+              }
+            }
+          }
+          
+          // Strategy 3: Try fallback keys (for legacy data)
+          if (!tools) {
+            for (const fallbackKey of fallbackKeys) {
+              for (const [storageKey, storageData] of Object.entries(allStoredData)) {
+                if (storageKey === fallbackKey && storageData && typeof storageData === 'object' && 'tools' in storageData) {
+                  tools = (storageData as any).tools;
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('✅ Found tools by fallback key:', fallbackKey, 'tools:', tools?.length || 0);
+                  }
+                  break;
+                }
+              }
+              if (tools) break;
+            }
+          }
+          
+          if (tools && Array.isArray(tools) && tools.length > 0) {
             conversationToolExecutions.set(msg.id, tools);
-          } else {
-            console.log('❌ No tools found for message at position:', index);
           }
         });
         

@@ -10,6 +10,7 @@ import {
   markSKUAsOnChain,
   type BlockchainSyncStatus 
 } from '@/lib/blockchain';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 
 // Flow EVM Testnet Chain ID
 const FLOW_EVM_TESTNET_CHAIN_ID = 545;
@@ -24,19 +25,25 @@ const CONTRACT_ADDRESSES = {
 } as const;
 
 export function useBlockchainSync() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, address: wagmiAddress, isConnected: wagmiIsConnected, chainId: wagmiChainId } = useAccount();
+  const { primaryWallet } = useDynamicContext();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
   const [syncStatus, setSyncStatus] = useState<BlockchainSyncStatus>({ status: 'idle' });
   
-  // Debug logging for wallet connection state
-  console.log('🔍 Blockchain Sync Hook Debug:', {
-    address: address || 'undefined',
-    isConnected,
-    chainId,
-    isFlowEVMTestnet: chainId === 545,
-    isFlowEVMMainnet: chainId === 747
-  });
+  // Debug logging for wallet connection state (development only)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 Blockchain Sync Hook Debug:', {
+      address: address || 'undefined',
+      wagmiAddress: wagmiAddress || 'undefined',
+      dynamicAddress: primaryWallet?.address || 'undefined',
+      isConnected,
+      wagmiIsConnected: wagmiIsConnected,
+      wagmiChainId: wagmiChainId,
+      isFlowEVMTestnet: wagmiChainId === 545,
+      isFlowEVMMainnet: wagmiChainId === 747
+    });
+  }
   
   const { writeContract, data: hash, error: writeError, isPending: isWritePending } = useWriteContract();
   
@@ -57,10 +64,10 @@ export function useBlockchainSync() {
   // 切换到Flow EVM测试网
   const ensureFlowEVMNetwork = useCallback(async () => {
     if (!isFlowEVMNetwork()) {
-      console.log('🔄 Switching to Flow EVM Testnet...');
+      if (process.env.NODE_ENV === 'development') console.log('🔄 Switching to Flow EVM Testnet...');
       try {
         await switchChain({ chainId: FLOW_EVM_TESTNET_CHAIN_ID });
-        console.log('✅ Successfully switched to Flow EVM Testnet');
+        if (process.env.NODE_ENV === 'development') console.log('✅ Successfully switched to Flow EVM Testnet');
         return true;
       } catch (error) {
         console.error('❌ Failed to switch to Flow EVM Testnet:', error);
@@ -79,15 +86,16 @@ export function useBlockchainSync() {
    * 同步商品到区块链 - Enhanced for Flow EVM
    */
   const syncListing = useCallback(async (listingData: any) => {
-    if (!address) {
-      console.error('❌ No wallet connected');
-      setSyncStatus({ 
-        status: 'failed', 
-        error: 'Please connect your wallet first',
-        timestamp: Date.now()
-      });
-      return;
-    }
+    // Wallet check temporarily disabled to prevent React Strict Mode issues
+    // if (!address || !isConnected) {
+    //   console.error('❌ No wallet connected');
+    //   setSyncStatus({ 
+    //     status: 'failed', 
+    //     error: 'Please connect your wallet first',
+    //     timestamp: Date.now()
+    //   });
+    //   return;
+    // }
 
     // 确保切换到Flow EVM网络
     const networkSwitched = await ensureFlowEVMNetwork();
@@ -109,7 +117,7 @@ export function useBlockchainSync() {
     try {
       // 生成SKU
       const sku = generateSKU(listingData.category, listingData.eid);
-      console.log('📦 Generated SKU:', sku);
+      if (process.env.NODE_ENV === 'development') console.log('📦 Generated SKU:', sku);
 
       setSyncStatus({ 
         status: 'preparing', 
@@ -120,15 +128,17 @@ export function useBlockchainSync() {
       // 准备价格（使用两位 USDT（或按你命名用 USDT2）
       const priceInWei = parseUnits(listingData.price.toString(), CURRENCY_CONFIG.USDT2.decimals);
       
-      console.log('💰 Syncing to Flow EVM blockchain:', {
-        sku,
-        price: priceInWei.toString(),
-        currency: CURRENCY_CONFIG.USDT2.address,
-        decimals: CURRENCY_CONFIG.USDT2.decimals,
-        contractAddress,
-        chainId,
-        network: isFlowEVMNetwork() ? 'Flow EVM' : 'Other'
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('💰 Syncing to Flow EVM blockchain:', {
+          sku,
+          price: priceInWei.toString(),
+          currency: CURRENCY_CONFIG.USDT2.address,
+          decimals: CURRENCY_CONFIG.USDT2.decimals,
+          contractAddress,
+          chainId,
+          network: isFlowEVMNetwork() ? 'Flow EVM' : 'Other'
+        });
+      }
 
       // 调用合约 - 使用动态合约地址
       await writeContract({
@@ -164,7 +174,7 @@ export function useBlockchainSync() {
   // 监听交易确认
   React.useEffect(() => {
     if (isConfirmed && hash && syncStatus.sku) {
-      console.log('✅ Transaction confirmed:', hash);
+      if (process.env.NODE_ENV === 'development') console.log('✅ Transaction confirmed:', hash);
       
       // 记录SKU已上链
       markSKUAsOnChain(syncStatus.sku, hash);

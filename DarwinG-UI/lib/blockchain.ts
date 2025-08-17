@@ -49,6 +49,10 @@ export const CURRENCY_CONFIG = {
 // SKU序列号管理
 const skuSequences = new Map<string, number>();
 
+// Global SKU tracking to prevent duplicates
+const generatedSKUs = new Set<string>();
+const pendingSKUs = new Map<string, number>(); // SKU -> timestamp
+
 // 上链状态类型
 export type BlockchainSyncStatus = {
   status: 'idle' | 'preparing' | 'waiting' | 'confirmed' | 'failed' | 'skipped' | 'parse_failed';
@@ -75,21 +79,50 @@ export function parseDraftToListingResponse(toolResponse: string): any {
 
 /**
  * 生成SKU: <ENV>-<CAT>-<EID前六位>-<SEQ>
+ * Enhanced with deduplication to prevent race conditions
  */
 export function generateSKU(category: string, eid: string): string {
   const env = "FM";
   const cat = category.substring(0, 3).toUpperCase();
   const eidPrefix = eid.substring(0, 6);
   
-  // 生成3位流水号
-  const baseKey = `${env}-${cat}-${eidPrefix}`;
-  const currentSeq = skuSequences.get(baseKey) || 0;
-  const nextSeq = currentSeq + 1;
-  skuSequences.set(baseKey, nextSeq);
+  let attempts = 0;
+  const maxAttempts = 100;
   
-  const seq = nextSeq.toString().padStart(3, '0');
+  while (attempts < maxAttempts) {
+    // 生成3位流水号
+    const baseKey = `${env}-${cat}-${eidPrefix}`;
+    const currentSeq = skuSequences.get(baseKey) || 0;
+    const nextSeq = currentSeq + 1;
+    skuSequences.set(baseKey, nextSeq);
+    
+    const seq = nextSeq.toString().padStart(3, '0');
+    const sku = `${env}-${cat}-${eidPrefix}-${seq}`;
+    
+    // Check for duplicates (including pending SKUs)
+    if (!generatedSKUs.has(sku) && !pendingSKUs.has(sku)) {
+      generatedSKUs.add(sku);
+      pendingSKUs.set(sku, Date.now());
+      
+      // Clean up old pending SKUs (older than 5 minutes)
+      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+      for (const [pendingSku, timestamp] of pendingSKUs.entries()) {
+        if (timestamp < fiveMinutesAgo) {
+          pendingSKUs.delete(pendingSku);
+        }
+      }
+      
+      return sku;
+    }
+    
+    attempts++;
+  }
   
-  return `${env}-${cat}-${eidPrefix}-${seq}`;
+  // Fallback with timestamp if unable to generate unique SKU
+  const timestamp = Date.now().toString().slice(-6);
+  const fallbackSku = `${env}-${cat}-${eidPrefix}-${timestamp}`;
+  generatedSKUs.add(fallbackSku);
+  return fallbackSku;
 }
 
 /**

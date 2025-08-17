@@ -61,7 +61,17 @@ export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayP
   const isHacker = currentTheme === 'hacker';
 
   // Auto-expand rounds when they start and auto-collapse when they complete
+  // Use a ref to track effect execution to prevent React Strict Mode double execution
+  const effectExecutedRef = React.useRef(false);
+  
   React.useEffect(() => {
+    // Prevent double execution in React Strict Mode
+    if (effectExecutedRef.current) {
+      effectExecutedRef.current = false;
+      return;
+    }
+    effectExecutedRef.current = true;
+    
     const runningRounds = tools.filter(tool => 
       tool.label.startsWith('ROUND ') && tool.status === 'start'
     );
@@ -113,10 +123,10 @@ export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayP
         // Skip if already collapsing or has pending collapse
         if (collapseTimeouts.current.has(round.id)) return;
         
-        console.log('🎯 Scheduling auto-collapse for:', round.label);
+        if (process.env.NODE_ENV === 'development') console.log('🎯 Scheduling auto-collapse for:', round.label);
         
         const timeout = setTimeout(() => {
-          console.log('🎯 Starting collapse animation for:', round.label);
+          if (process.env.NODE_ENV === 'development') console.log('🎯 Starting collapse animation for:', round.label);
           
           // First, mark as collapsing for visual feedback
           setCollapsingTools(prev => new Set(prev).add(round.id));
@@ -126,7 +136,7 @@ export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayP
             setExpandedTools(current => {
               const updated = new Set(current);
               updated.delete(round.id);
-              console.log('🎯 Collapsed round:', round.label);
+              if (process.env.NODE_ENV === 'development') console.log('🎯 Collapsed round:', round.label);
               return updated;
             });
             
@@ -146,7 +156,7 @@ export function ToolExecutionDisplay({ tools, className }: ToolExecutionDisplayP
         collapseTimeouts.current.set(round.id, timeout);
       });
     } else {
-      console.log('🔄 Conversation switch detected, skipping auto-collapse');
+      if (process.env.NODE_ENV === 'development') console.log('🔄 Conversation switch detected, skipping auto-collapse');
       // Clear any pending collapse timers from previous conversation
       collapseTimeouts.current.forEach(timeout => clearTimeout(timeout));
       collapseTimeouts.current.clear();
