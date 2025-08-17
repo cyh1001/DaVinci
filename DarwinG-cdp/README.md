@@ -20,11 +20,6 @@ This project customizes the x402 payment protocol workflow to create tools that 
    - Enables AI agents to purchase OpenRouter credits by paying the seller in cryptocurrency
    - The seller then performs the actual backend API calls to credit the buyer's OpenRouter account
 
-3. **run_x402.py** - Direct x402 Implementation
-   - Alternative implementation using the official x402 httpx client
-   - Demonstrates direct integration with OpenRouter's Coinbase payment endpoint
-   - Shows how to handle x402 payment flows programmatically
-
 ## Key Features
 
 - **Autonomous Wallet Management**: AI agents can monitor and maintain their own cryptocurrency balances
