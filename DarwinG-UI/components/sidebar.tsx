@@ -34,7 +34,7 @@ export function Sidebar({
   onDeleteConversation, 
   onRenameConversation,
   refreshTrigger,
-  isHydrated: parentIsHydrated,
+  isHydrated: _parentIsHydrated,
   defaultExpandConversations = false
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
@@ -61,7 +61,7 @@ export function Sidebar({
   );
 
   // 从Dynamic获取钱包地址 - 稳定化处理
-  const { primaryWallet } = useDynamicContext();
+  const { primaryWallet, user } = useDynamicContext();
   const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
   
   // 仅在primaryWallet.address实际变化时更新
@@ -176,15 +176,19 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "flex flex-col border-r bg-gradient-to-b from-white via-white to-gray-50/30 transition-all duration-300 ease-in-out h-full min-h-0 shadow-sm",
-        "[&[data-theme=hacker]]:hacker-sidebar [&[data-theme=hacker]]:bg-[#0d1117] [&[data-theme=hacker]]:border-[#30363d]",
+        "flex flex-col h-full min-h-0 elegant-sidebar",
         isCollapsed ? "w-16" : "w-64",
         className
       )}
-      data-theme={typeof window !== 'undefined' ? document.documentElement.getAttribute('data-theme') : 'light'}
     >
-      <div className="flex-1 overflow-y-auto p-5">
-        <div className="flex items-center justify-between mb-6">
+      <div className={cn(
+        "flex-1 overflow-y-auto",
+        isCollapsed ? "p-3" : "p-5"
+      )}>
+        <div className={cn(
+          "flex items-center justify-between",
+          isCollapsed ? "mb-4" : "mb-6"
+        )}>
           {!isCollapsed && (
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-sm">
@@ -208,7 +212,10 @@ export function Sidebar({
             {isCollapsed ? <ChevronRight className="h-4 w-4 text-gray-600" /> : <ChevronLeft className="h-4 w-4 text-gray-600" />}
           </Button>
         </div>
-        <nav className="space-y-1.5">
+        <nav className={cn(
+          "space-y-1.5",
+          isCollapsed && "space-y-2"
+        )}>
           {/* Chat Tab - Unified rendering logic */}
           {(() => {
             // 统一 Chat 按钮的渲染逻辑
@@ -216,20 +223,16 @@ export function Sidebar({
             const shouldShowSimpleChat = !walletAddress || isCollapsed;
             
             // 检查是否为访客模式
-            const { user } = useDynamicContext();
             const isVisitor = walletAddress && !user;
             
             if (shouldShowExpandedChat) {
               return (
                 <div className="space-y-1">
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant={activeTab === 'chat' ? "secondary" : "ghost"}
+                    <div
                       className={cn(
-                        "flex-1 justify-start rounded-xl font-medium transition-all duration-200",
-                        activeTab === 'chat' 
-                          ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 text-emerald-800 shadow-sm border-emerald-200/50" 
-                          : "hover:bg-gray-100/60 text-gray-700 hover:text-gray-900"
+                        "flex-1 elegant-nav-item cursor-pointer",
+                        activeTab === 'chat' && "active"
                       )}
                       onClick={() => onSelectTab('chat')}
                     >
@@ -238,7 +241,7 @@ export function Sidebar({
                         activeTab === 'chat' ? "text-emerald-600" : "text-gray-500"
                       )} />
                       Chat
-                    </Button>
+                    </div>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -284,9 +287,9 @@ export function Sidebar({
                         </Button>
                       </div>
                       <div className="space-y-1 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                        {conversations.map((conv) => (
+                        {conversations.map((conv, convIndex) => (
                           <div
-                            key={conv.id}
+                            key={`conv-${conv.id}-${convIndex}`}
                             className={cn(
                               "group flex items-center gap-2 px-3 py-2 rounded-lg text-sm cursor-pointer transition-all duration-200",
                               currentConversationId === conv.id 
@@ -364,14 +367,11 @@ export function Sidebar({
             
             if (shouldShowSimpleChat) {
               return (
-                <Button
-                  variant={activeTab === 'chat' ? "secondary" : "ghost"}
+                <div
                   className={cn(
-                    "w-full justify-start rounded-xl font-medium transition-all duration-200",
-                    isCollapsed && "px-0 justify-center",
-                    activeTab === 'chat' 
-                      ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 text-emerald-800 shadow-sm border-emerald-200/50" 
-                      : "hover:bg-gray-100/60 text-gray-700 hover:text-gray-900"
+                    "w-full elegant-nav-item cursor-pointer",
+                    isCollapsed && "collapsed",
+                    activeTab === 'chat' && "active"
                   )}
                   onClick={() => onSelectTab('chat')}
                 >
@@ -381,21 +381,18 @@ export function Sidebar({
                     activeTab === 'chat' ? "text-emerald-600" : "text-gray-500"
                   )} />
                   {!isCollapsed && "Chat"}
-                </Button>
+                </div>
               );
             }
             
             return null;
           })()}
           
-          <Button
-            variant={activeTab === 'products' ? "secondary" : "ghost"}
+          <div
             className={cn(
-              "w-full justify-start rounded-xl font-medium transition-all duration-200",
-              isCollapsed && "px-0 justify-center",
-              activeTab === 'products' 
-                ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 text-emerald-800 shadow-sm border-emerald-200/50" 
-                : "hover:bg-gray-100/60 text-gray-700 hover:text-gray-900"
+              "w-full elegant-nav-item cursor-pointer",
+              isCollapsed && "collapsed",
+              activeTab === 'products' && "active"
             )}
             onClick={() => onSelectTab('products')}
           >
@@ -405,15 +402,12 @@ export function Sidebar({
               activeTab === 'products' ? "text-emerald-600" : "text-gray-500"
             )} />
             {!isCollapsed && "Products"}
-          </Button>
-          <Button
-            variant={activeTab === 'marketing' ? "secondary" : "ghost"}
+          </div>
+          <div
             className={cn(
-              "w-full justify-start rounded-xl font-medium transition-all duration-200",
-              isCollapsed && "px-0 justify-center",
-              activeTab === 'marketing' 
-                ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 text-emerald-800 shadow-sm border-emerald-200/50" 
-                : "hover:bg-gray-100/60 text-gray-700 hover:text-gray-900"
+              "w-full elegant-nav-item cursor-pointer",
+              isCollapsed && "collapsed",
+              activeTab === 'marketing' && "active"
             )}
             onClick={() => onSelectTab('marketing')}
           >
@@ -423,15 +417,12 @@ export function Sidebar({
               activeTab === 'marketing' ? "text-emerald-600" : "text-gray-500"
             )} />
             {!isCollapsed && "Marketing"}
-          </Button>
-          <Button
-            variant={activeTab === 'crm' ? "secondary" : "ghost"}
+          </div>
+          <div
             className={cn(
-              "w-full justify-start rounded-xl font-medium transition-all duration-200",
-              isCollapsed && "px-0 justify-center",
-              activeTab === 'crm' 
-                ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 text-emerald-800 shadow-sm border-emerald-200/50" 
-                : "hover:bg-gray-100/60 text-gray-700 hover:text-gray-900"
+              "w-full elegant-nav-item cursor-pointer",
+              isCollapsed && "collapsed",
+              activeTab === 'crm' && "active"
             )}
             onClick={() => onSelectTab('crm')}
           >
@@ -441,7 +432,7 @@ export function Sidebar({
               activeTab === 'crm' ? "text-emerald-600" : "text-gray-500"
             )} />
             {!isCollapsed && "CRM"}
-          </Button>
+          </div>
         </nav>
       </div>
       <div className="p-5 border-t border-gray-200/60 bg-gradient-to-t from-gray-50/30 to-transparent">

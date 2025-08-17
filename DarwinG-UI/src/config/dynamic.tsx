@@ -5,27 +5,86 @@ import {
   DynamicWidget,
 } from "@dynamic-labs/sdk-react-core";
 
-import { DynamicWagmiConnector } from "@dynamic-labs/wagmi-connector";
+import { DynamicWagmiConnector} from "@dynamic-labs/wagmi-connector";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createConfig, WagmiProvider } from 'wagmi';
 import { http } from 'viem';
+// import { mainnet, polygon, arbitrum, base } from 'viem/chains';
 import { mainnet, polygon, arbitrum, base } from 'viem/chains';
+
+// Flow EVM Networks Configuration (Official Parameters)
+const flowEvmTestnet = {
+  id: 545,
+  name: 'Flow EVM Testnet',
+  nativeCurrency: {
+    name: 'Flow',
+    symbol: 'FLOW',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://testnet.evm.nodes.onflow.org'],
+    },
+    public: {
+      http: ['https://testnet.evm.nodes.onflow.org'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Flowscan Testnet',
+      url: 'https://evm-testnet.flowscan.io',
+    },
+  },
+  testnet: true,
+} as const;
+
+const flowEvmMainnet = {
+  id: 747,
+  name: 'Flow EVM Mainnet',
+  nativeCurrency: {
+    name: 'Flow',
+    symbol: 'FLOW',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://mainnet.evm.nodes.onflow.org'],
+    },
+    public: {
+      http: ['https://mainnet.evm.nodes.onflow.org'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Flowscan',
+      url: 'https://evm.flowscan.io',
+    },
+  },
+  testnet: false,
+} as const;
 import { BitcoinWalletConnectors } from "@dynamic-labs/bitcoin";
 import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
 import { FlowWalletConnectors } from "@dynamic-labs/flow";
 import { SolanaWalletConnectors } from "@dynamic-labs/solana";
 
-// Wagmi配置 - 参考Dynamic官方示例
+// Map Flow EVM chains using Dynamic's utility
+// const flowTestnetChain = flowEvmTestnet;
+// const flowMainnetChain = flowEvmMainnet;
+
+// Wagmi Configuration with Enhanced Flow EVM Support
 const config = createConfig({
-  chains: [mainnet, polygon, arbitrum, base],
+  chains: [mainnet, polygon, arbitrum, base, flowEvmTestnet, flowEvmMainnet],
   multiInjectedProviderDiscovery: false,
   transports: {
     [mainnet.id]: http(),
     [polygon.id]: http(),
     [arbitrum.id]: http(),
     [base.id]: http(),
+    [flowEvmTestnet.id]: http(flowEvmTestnet.rpcUrls.default.http[0]),
+    [flowEvmMainnet.id]: http(flowEvmMainnet.rpcUrls.default.http[0]),
   },
 });
+
 
 const queryClient = new QueryClient();
 
@@ -65,13 +124,13 @@ export function DynamicWalletProvider({ children }: { children: React.ReactNode 
         },
       }}
     >
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={config}>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
           <DynamicWagmiConnector>
             {children}
           </DynamicWagmiConnector>
-        </WagmiProvider>
-      </QueryClientProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
     </DynamicContextProvider>
   );
 }

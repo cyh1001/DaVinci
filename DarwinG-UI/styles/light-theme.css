@@ -283,6 +283,24 @@
   text-transform: uppercase;
 }
 
+/* 标题和文本样式 - 现代化文字设计 */
+[data-theme="light"] .light-title {
+  color: var(--color-text-primary) !important;
+  text-shadow: none;
+}
+
+[data-theme="light"] .light-subtitle {
+  color: var(--color-text-secondary) !important;
+}
+
+[data-theme="light"] .light-text {
+  color: var(--color-text-primary) !important;
+}
+
+[data-theme="light"] .light-description {
+  color: var(--color-text-tertiary) !important;
+}
+
 /* 代码块样式 - 优雅的代码显示 */
 [data-theme="light"] .light-code {
   background: var(--color-bg-tertiary);

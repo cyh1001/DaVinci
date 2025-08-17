@@ -6,6 +6,8 @@ import { ImageIcon, FileText, File } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ToolExecutionDisplay, type ToolExecution } from './tool-execution';
+import { BlockchainSyncIndicator } from './blockchain-sync-indicator';
+import { type BlockchainSyncStatus } from '@/lib/blockchain';
 
 export type AttachmentPreview = {
   id: string;
@@ -25,11 +27,13 @@ export function MessageBubble({
   children,
   className,
   tools = [],
+  blockchainStatus,
 }: {
   role: "user" | "assistant" | "system";
   children: React.ReactNode;
   className?: string;
   tools?: ToolExecution[];
+  blockchainStatus?: BlockchainSyncStatus;
 }) {
   const isUser = role === "user";
   const isAssistant = role === "assistant";
@@ -146,14 +150,10 @@ export function MessageBubble({
     >
       <div
         className={cn(
-          "max-w-[85%] rounded-2xl px-4 py-3 text-sm transition-all duration-200",
-          "backdrop-blur-sm transform hover:scale-[1.01]",
+          "max-w-[85%] text-sm transition-all duration-200",
           isUser
-            ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:from-emerald-600 hover:to-emerald-700"
-            : "bg-gradient-to-br from-white to-gray-50/80 text-gray-800 shadow-md hover:shadow-lg border border-gray-200/50 hover:border-gray-300/50",
-          // 极客主题样式
-          isUser && "[data-theme=hacker]_&:hacker-chat-user [data-theme=hacker]_&:bg-gradient-to-br [data-theme=hacker]_&:from-[#58a6ff]/20 [data-theme=hacker]_&:to-[#58a6ff]/10 [data-theme=hacker]_&:text-[#58a6ff] [data-theme=hacker]_&:border [data-theme=hacker]_&:border-[#58a6ff]/30 [data-theme=hacker]_&:shadow-[0_0_15px_rgba(88,166,255,0.2)]",
-          !isUser && "[data-theme=hacker]_&:hacker-chat-assistant [data-theme=hacker]_&:bg-gradient-to-br [data-theme=hacker]_&:from-[#00ff41]/10 [data-theme=hacker]_&:to-[#00ff41]/5 [data-theme=hacker]_&:text-[#00ff41] [data-theme=hacker]_&:border [data-theme=hacker]_&:border-[#00ff41]/30 [data-theme=hacker]_&:shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+            ? "elegant-chat-user"
+            : "elegant-chat-assistant"
         )}
       >
         {isAssistant ? (
@@ -229,6 +229,13 @@ export function MessageBubble({
                 <div className="text-gray-700">{children}</div>
               )}
             </div>
+            
+            {/* Blockchain Sync Status - 显示在右下角 */}
+            {blockchainStatus && blockchainStatus.status !== 'idle' && (
+              <div className="mt-3 flex justify-end">
+                <BlockchainSyncIndicator syncStatus={blockchainStatus} />
+              </div>
+            )}
           </div>
         ) : (
           children

@@ -28,11 +28,13 @@ import {
   type Conversation,
   type DifyHistoryResponse
 } from "@/lib/conversation";
+import { useBlockchainSync } from "@/hooks/useBlockchainSync";
+import { type BlockchainSyncStatus } from "@/lib/blockchain";
 
 const CONVERSATION_ID_KEY = "davinci_conversation_id";
 import { Sidebar } from "@/components/sidebar"; // Import the new Sidebar component
 
-const BRAND_COLOR = "rgb(249, 217, 247)";
+// const BRAND_COLOR = "rgb(249, 217, 247)";
 
 type DragState = "idle" | "over";
 
@@ -75,6 +77,212 @@ export default function Page() {
     }
   }, [primaryWallet?.address, walletAddress]);
 
+  // 区块链同步功能
+  const { syncStatus, syncListing, isLoading: isSyncing, reset: resetSyncStatus } = useBlockchainSync();
+  const [blockchainSyncStates, setBlockchainSyncStates] = React.useState<Map<string, BlockchainSyncStatus>>(new Map());
+  const [currentSyncMessageId, setCurrentSyncMessageId] = React.useState<string | null>(null);
+
+  // TODO: Remove this unused function - blockchain sync is handled directly via tool execution checks
+  // const setupBlockchainSyncListener = React.useCallback(() => {
+  //   console.log('🔧 Setting up blockchain sync SSE listener...');
+  //   
+  //   // We'll manually call the API when a message is sent
+  //   // This is a workaround since we can't intercept the useChat stream
+  // }, []);
+
+
+  // Function to check tool executions for blockchain sync triggers
+  const triggerBlockchainSyncCheck = React.useCallback(async (messageId: string, tools: ToolExecution[]) => {
+    console.log('🔍 Checking tools for blockchain sync triggers:', tools.map(t => `${t.label}(${t.status})`));
+    
+    // Look for tools that contain draft_to_listing calls - check multiple sources
+    const draftToListingTool = tools.find(tool => {
+      // Direct name/label check
+      if (tool.name === 'draft_to_listing' || tool.label?.toLowerCase().includes('draft_to_listing')) {
+        return true;
+      }
+      
+      // Check if this tool contains draft_to_listing in responseData.tool_responses
+      const responseData = (tool as any).responseData;
+      if (responseData?.tool_responses?.length > 0) {
+        return responseData.tool_responses.some((tr: any) => 
+          tr.tool_call_name === 'draft_to_listing' && tr.tool_response
+        );
+      }
+      
+      return false;
+    });
+    
+    if (draftToListingTool) {
+      console.log('🎯 Found draft_to_listing tool:', draftToListingTool);
+      
+      try {
+        // Step 1: Extract the tool response data
+        let dataSource = null;
+        
+        // Try multiple data sources in priority order
+        if ((draftToListingTool as any).tool_response) {
+          dataSource = (draftToListingTool as any).tool_response;
+          console.log('🔍 Found tool_response field:', typeof dataSource);
+        } else if ((draftToListingTool as any).observation) {
+          dataSource = (draftToListingTool as any).observation;
+          console.log('🔍 Found observation field:', typeof dataSource);
+        } else if ((draftToListingTool as any).result) {
+          dataSource = (draftToListingTool as any).result;
+          console.log('🔍 Found result field:', typeof dataSource);
+        } else if ((draftToListingTool as any).responseData?.tool_responses?.length > 0) {
+          // Find the specific draft_to_listing response in the array
+          const draftResponse = (draftToListingTool as any).responseData.tool_responses.find((tr: any) => 
+            tr.tool_call_name === 'draft_to_listing' && tr.tool_response
+          );
+          if (draftResponse) {
+            dataSource = draftResponse.tool_response;
+            console.log('🔍 Found draft_to_listing in responseData.tool_responses:', typeof dataSource);
+          }
+        }
+        
+        if (!dataSource) {
+          console.log('⚠️ No data source found in draft_to_listing tool');
+          return;
+        }
+        
+        // Step 2: Parse the JSON response data
+        let responseData = null;
+        
+        if (typeof dataSource === 'string') {
+          // Look for "tool response: {" pattern
+          if (dataSource.includes('tool response:')) {
+            const toolResponseIndex = dataSource.indexOf('tool response:');
+            const jsonStart = dataSource.indexOf('{', toolResponseIndex);
+            
+            if (jsonStart !== -1) {
+              // Find the matching closing brace by counting nested braces
+              let braceCount = 0;
+              let jsonEnd = -1;
+              
+              for (let i = jsonStart; i < dataSource.length; i++) {
+                if (dataSource[i] === '{') braceCount++;
+                if (dataSource[i] === '}') braceCount--;
+                if (braceCount === 0) {
+                  jsonEnd = i;
+                  break;
+                }
+              }
+              
+              if (jsonEnd !== -1) {
+                const jsonStr = dataSource.substring(jsonStart, jsonEnd + 1);
+                try {
+                  responseData = JSON.parse(jsonStr);
+                  console.log('📦 Successfully parsed tool response JSON with nested braces:', responseData);
+                } catch (e) {
+                  console.error('❌ Failed to parse tool response JSON:', e);
+                  return;
+                }
+              } else {
+                console.log('⚠️ Could not find matching closing brace for JSON');
+                return;
+              }
+            } else {
+              console.log('⚠️ Found "tool response:" but no opening brace');
+              return;
+            }
+          } else {
+            // Try to parse the entire string as JSON
+            try {
+              responseData = JSON.parse(dataSource);
+              console.log('📦 Parsed entire string as JSON:', responseData);
+            } catch (e) {
+              console.log('⚠️ String is not valid JSON, cannot parse');
+              return;
+            }
+          }
+        } else if (typeof dataSource === 'object' && dataSource !== null) {
+          responseData = dataSource;
+          console.log('📦 Using object directly as response data:', responseData);
+        } else {
+          console.log('⚠️ Data source is not string or object, cannot parse');
+          return;
+        }
+        
+        // Step 3: Check if success is true AND has required data in the JSON response
+        if (responseData && responseData.success === true) {
+          console.log('✅ Found success: true in draft_to_listing response!');
+          
+          // Step 4: Validate required fields exist before blockchain sync
+          if (!responseData.category || !responseData.eid || !responseData.price) {
+            console.log('⚠️ Missing required fields for blockchain sync:', {
+              hasCategory: !!responseData.category,
+              hasEid: !!responseData.eid, 
+              hasPrice: !!responseData.price
+            });
+            console.log('🚫 Skipping blockchain sync due to incomplete data');
+            return;
+          }
+          
+          console.log('✅ All required fields present, triggering Flow EVM blockchain sync...');
+          
+          // Step 5: Create listing data from the successful tool response (no fallbacks needed)
+          const listingData = {
+            success: true,
+            category: responseData.category,
+            eid: responseData.eid,
+            price: responseData.price,
+            targetNetwork: 'flow-evm-testnet',
+            chainId: 545,
+            requiresNetworkSwitch: true,
+            timestamp: Date.now(),
+            source: 'draft_to_listing_tool',
+            // Include full response data for blockchain sync
+            originalData: responseData
+          };
+          
+          console.log('🚀 Triggering Flow EVM testnet blockchain sync for message:', messageId);
+          console.log('📦 Listing data with real values:', {
+            category: listingData.category,
+            eid: listingData.eid,
+            price: listingData.price,
+            success: listingData.success
+          });
+          
+          // Step 5: Execute blockchain sync to Flow EVM testnet
+          console.log('🔄 Starting blockchain sync for message:', messageId);
+          
+          // Set this as the current syncing message
+          setCurrentSyncMessageId(messageId);
+          
+          try {
+            // Start blockchain sync - hook will manage status and update UI via useEffect
+            await syncListing(listingData);
+            console.log('✅ Flow EVM testnet blockchain sync call completed!');
+            
+          } catch (error) {
+            console.error('❌ Flow EVM testnet blockchain sync failed:', error);
+            
+            // Clear current sync and set failed status
+            setCurrentSyncMessageId(null);
+            setBlockchainSyncStates(prev => {
+              const newMap = new Map(prev);
+              newMap.set(messageId, { 
+                status: 'failed', 
+                error: error instanceof Error ? error.message : String(error),
+                timestamp: Date.now(),
+                reason: 'Flow EVM testnet sync failure'
+              });
+              return newMap;
+            });
+          }
+        } else {
+          console.log('ℹ️ draft_to_listing response does not contain success: true, skipping blockchain sync');
+          console.log('🔍 Response data:', responseData);
+        }
+      } catch (error) {
+        console.error('❌ Error parsing draft_to_listing tool data:', error);
+      }
+    } else {
+      console.log('ℹ️ No draft_to_listing tool found or not completed');
+    }
+  }, [syncListing, setBlockchainSyncStates]);
+
   const {
     messages,
     sendMessage,
@@ -83,8 +291,20 @@ export default function Page() {
     // Automatically send after tool calls complete (Generative UI pattern)
   } = useChat({
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-    onFinish: (message: any) => {
-      console.log('✅ onFinish called with message:', message);
+    // api: '/api/chat',
+    onFinish: (messageWrapper: any) => {
+      console.log('✅ onFinish called with messageWrapper:', messageWrapper);
+      
+      // Handle both message formats: direct message or wrapped message
+      const message = messageWrapper?.message || messageWrapper;
+      const messageId = message?.id;
+      const messageContent = message?.content;
+      
+      console.log('🔍 Extracted message ID:', messageId);
+      console.log('🔍 Message content for blockchain sync check:', messageContent);
+      console.log('🔍 Full message object:', JSON.stringify(message, null, 2));
+      
+      // Note: Blockchain sync is now handled by triggerBlockchainSyncCheck via tool executions
       
       // Reset generation state when finished
       console.log('🔄 Resetting all generation states in onFinish');
@@ -93,21 +313,25 @@ export default function Page() {
       setSending(false);
       
       // Move current tool executions to the actual message ID and save to localStorage
-      if (message && message.id) {
-        console.log('✅ onFinish called with message ID:', message.id);
+      if (messageId) {
+        console.log('✅ onFinish called with message ID:', messageId);
         setToolExecutions(prev => {
           const currentTools = prev.get('current');
           console.log('🔧 Current tools found:', currentTools ? currentTools.length : 0);
           if (currentTools && currentTools.length > 0) {
+            // *** TRIGGER BLOCKCHAIN SYNC CHECK HERE ***
+            console.log('🔍 Triggering blockchain sync check for tools:', currentTools.map(t => `${t.label}(${t.status})`));
+            triggerBlockchainSyncCheck(messageId, currentTools);
+            
             const newMap = new Map(prev);
-            newMap.set(message.id, currentTools);
+            newMap.set(messageId, currentTools);
             newMap.delete('current');
             
             // Save to localStorage now that we have the actual message ID
-            console.log('💾 Saving tools for message:', message.id);
-            saveToolExecutionsToStorage(message.id, currentTools);
+            console.log('💾 Saving tools for message:', messageId);
+            saveToolExecutionsToStorage(messageId, currentTools);
             
-            console.log('🔧 Moved tools from current to message ID:', message.id);
+            console.log('🔧 Moved tools from current to message ID:', messageId);
             return newMap;
           } else {
             console.log('⚠️ No current tools to move');
@@ -115,7 +339,8 @@ export default function Page() {
           return prev;
         });
       } else {
-        console.log('⚠️ onFinish called but no message or message.id');
+        console.log('⚠️ onFinish called but no message ID found');
+        console.log('🔍 Message wrapper structure:', Object.keys(messageWrapper || {}));
       }
       
       // Refresh sidebar conversations once after a completed reply
@@ -196,6 +421,23 @@ export default function Page() {
   const [toolExecutions, setToolExecutions] = React.useState<Map<string, ToolExecution[]>>(new Map()); // Track tool executions per message
   const [isInitialLoading, setIsInitialLoading] = React.useState(true); // Start true to prevent welcome screen flash
   const [isNewConversation, setIsNewConversation] = React.useState(false); // Track when user explicitly wants new conversation
+
+  // Monitor hook status and update current sync message
+  React.useEffect(() => {
+    if (currentSyncMessageId && syncStatus.status !== 'idle') {
+      // Update the specific message's blockchain status with hook's status
+      setBlockchainSyncStates(prev => {
+        const newMap = new Map(prev);
+        newMap.set(currentSyncMessageId, syncStatus);
+        return newMap;
+      });
+      
+      // Clear current sync when confirmed or failed
+      if (syncStatus.status === 'confirmed' || syncStatus.status === 'failed') {
+        setCurrentSyncMessageId(null);
+      }
+    }
+  }, [syncStatus, currentSyncMessageId]);
 
   // Helper functions for tool executions persistence
   const saveToolExecutionsToStorage = React.useCallback((messageId: string, tools: ToolExecution[]) => {
@@ -839,6 +1081,7 @@ export default function Page() {
       const currentTools = toolExecutions.get('current');
       if (currentTools && currentTools.length > 0) {
         console.log('🔄 Moving tools from current to completed message:', lastMessage.id);
+        
         setToolExecutions(prev => {
           const newMap = new Map(prev);
           newMap.set(lastMessage.id, currentTools);
@@ -853,6 +1096,7 @@ export default function Page() {
       }
     }
   }, [messages, isGenerating, sending, toolExecutions, saveToolExecutionsToStorage]);
+
 
   const onFilesSelected = React.useCallback(async (list: FileList | null) => {
     if (!list || list.length === 0) return;
@@ -1308,7 +1552,10 @@ export default function Page() {
   }, [currentTaskId, walletAddress]);
 
   return (
-    <main className="h-dvh bg-neutral-50 flex flex-col">
+    <main className="h-dvh flex flex-col"
+          style={{
+            background: 'var(--color-bg-primary, #fcfcfd)'
+          }}>
       <div className="flex flex-1 overflow-hidden"> {/* Full height container for sidebar and main content */}
         <Sidebar 
           onSelectTab={setActiveMainTab} 
@@ -1338,56 +1585,83 @@ export default function Page() {
             </div>
           ) : !walletAddress ? (
             // Modern welcome screen with integrated Dynamic wallet connection
-            <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-gray-50 via-white to-emerald-50/30 welcome-container">
-              <div className="w-full max-w-2xl text-center mx-auto">
+            <div className="flex-1 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+                 style={{
+                   background: 'var(--color-bg-primary, #fcfcfd)',
+                   minHeight: '100vh'
+                 }}>
+              <div className="w-full max-w-4xl text-center mx-auto elegant-card my-4 sm:my-8">
                 {/* Logo and branding */}
-                <div className="mx-auto mb-8 h-20 w-20 rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                <div className="mx-auto mb-8 h-20 w-20 rounded-3xl flex items-center justify-center"
+                     style={{
+                       background: 'var(--gradient-accent)',
+                       boxShadow: 'var(--shadow-accent)'
+                     }}>
                   <Sparkles className="h-10 w-10 text-white" />
                 </div>
                 
                 {/* Main heading */}
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-gray-900 welcome-title">
-                  <span className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4"
+                    style={{ color: 'var(--color-text-primary)' }}>
+                  <span style={{
+                    background: 'var(--gradient-accent)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}>
                     Welcome to DaVinci
                   </span>
                 </h1>
                 
                 {/* Subtitle */}
-                <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto welcome-subtitle">
+                <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 leading-relaxed max-w-3xl mx-auto"
+                   style={{ color: 'var(--color-text-secondary)' }}>
                   AI-powered multi-agent system for autonomous e-commerce operations
                 </p>
                 
                 {/* Feature highlights */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10 text-center">
-                  <div className="p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-gray-200/50">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mx-auto mb-3">
-                      <Package className="h-5 w-5 text-emerald-600" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-10 text-center">
+                  <div className="elegant-card p-4 sm:p-6">
+                    <div className="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center"
+                         style={{
+                           background: 'var(--color-primary-soft)',
+                           color: 'var(--color-primary)'
+                         }}>
+                      <Package className="h-6 w-6" />
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Product Management</h3>
-                    <p className="text-sm text-gray-600">AI-driven inventory & optimization</p>
+                    <h3 className="font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>Product Management</h3>
+                    <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>AI-driven inventory & optimization</p>
                   </div>
-                  <div className="p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-gray-200/50">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mx-auto mb-3">
-                      <Megaphone className="h-5 w-5 text-emerald-600" />
+                  <div className="elegant-card p-4 sm:p-6">
+                    <div className="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center"
+                         style={{
+                           background: 'var(--color-primary-soft)',
+                           color: 'var(--color-primary)'
+                         }}>
+                      <Megaphone className="h-6 w-6" />
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Smart Marketing</h3>
-                    <p className="text-sm text-gray-600">Automated campaign generation</p>
+                    <h3 className="font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>Smart Marketing</h3>
+                    <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>Automated campaign generation</p>
                   </div>
-                  <div className="p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-gray-200/50">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mx-auto mb-3">
-                      <Users className="h-5 w-5 text-emerald-600" />
+                  <div className="elegant-card p-4 sm:p-6">
+                    <div className="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center"
+                         style={{
+                           background: 'var(--color-primary-soft)',
+                           color: 'var(--color-primary)'
+                         }}>
+                      <Users className="h-6 w-6" />
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">CRM Intelligence</h3>
-                    <p className="text-sm text-gray-600">Customer insights & automation</p>
+                    <h3 className="font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>CRM Intelligence</h3>
+                    <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>Customer insights & automation</p>
                   </div>
                 </div>
                 
                 {/* Dynamic Widget Integration */}
-                <div className="rounded-2xl border border-gray-200/60 bg-white/80 backdrop-blur-sm shadow-lg p-8 mb-6">
+                <div className="elegant-card p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
                   <div className="mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Connect to Get Started</h2>
-                    <p className="text-gray-600 text-sm">
-                      Choose your preferred connection method to access DaVinci's AI capabilities
+                    <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>Connect to Get Started</h2>
+                    <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
+                      Choose your preferred connection method to access DaVinci&apos;s AI capabilities
                     </p>
                   </div>
                   
@@ -1422,7 +1696,7 @@ export default function Page() {
                 
                 {/* Security note */}
                 <div className="text-xs text-gray-500 text-center max-w-md mx-auto">
-                  🔒 Powered by Dynamic's enterprise-grade security. Your keys, your crypto. 
+                  🔒 Powered by Dynamic&apos;s enterprise-grade security. Your keys, your crypto. 
                   Non-custodial and fully decentralized.
                 </div>
               </div>
@@ -1445,7 +1719,7 @@ export default function Page() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm">ℹ️</span>
                           <span className="text-sm">
-                            <strong>Visitor Mode:</strong> Chat with AI, but conversations won't be saved.
+                            <strong>Visitor Mode:</strong> Chat with AI, but conversations won&apos;t be saved.
                           </span>
                         </div>
                         <div className="text-xs bg-amber-100 px-2 py-1 rounded-full">
@@ -1707,7 +1981,7 @@ export default function Page() {
                   ) : !isLoadingHistory ? (
                     // Generative UI Chatbot rendering of message parts:
                         <div className="flex flex-col gap-6 pb-8">
-                      {messages.map((m) => {
+                      {messages.map((m, messageIndex) => {
                         // Get tools for this message - check both message ID and 'current' for active streaming
                         const messageTools = toolExecutions.get(m.id) || [];
                         const currentTools = toolExecutions.get('current') || [];
@@ -1722,8 +1996,25 @@ export default function Page() {
                           console.log('🎯 Tools:', finalTools.map(t => `${t.label}(${t.status})`));
                         }
                         
+                        // 获取该消息的区块链同步状态
+                        const messageBlockchainStatus = blockchainSyncStates.get(m.id);
+                        
+                        // 调试信息
+                        if (messageBlockchainStatus && messageIndex < 3) {
+                          console.log('🔍 Message blockchain status:', {
+                            messageId: m.id,
+                            status: messageBlockchainStatus,
+                            allStates: Array.from(blockchainSyncStates.entries())
+                          });
+                        }
+                        
                         return (
-                          <MessageBubble key={m.id} role={m.role as any} tools={m.role === 'assistant' ? finalTools : []}>
+                          <MessageBubble 
+                            key={`${m.id}-${messageIndex}`} 
+                            role={m.role as any} 
+                            tools={m.role === 'assistant' ? finalTools : []}
+                            blockchainStatus={messageBlockchainStatus}
+                          >
                             {m.parts.map((part, index) => {
                               switch (part.type) {
                                 case "text":
@@ -2044,7 +2335,7 @@ export default function Page() {
                               Message Limit Reached
                             </div>
                             <div className="text-sm text-amber-700">
-                              You've used all {VISITOR_MESSAGE_LIMIT} visitor messages. Sign a message to unlock unlimited conversations and save your chat history.
+                              You&apos;ve used all {VISITOR_MESSAGE_LIMIT} visitor messages. Sign a message to unlock unlimited conversations and save your chat history.
                             </div>
                           </div>
                           <Button

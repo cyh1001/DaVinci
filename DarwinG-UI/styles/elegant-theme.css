@@ -1,0 +1,487 @@
+/* DaVinci Elegant Theme - 繁华中的简约 */
+
+/* ============================================ */
+/* 精致光影主题 - Sophisticated Light */
+/* ============================================ */
+:root[data-theme="light"] {
+  /* 基础色彩 - 温润而有深度 */
+  --color-bg-primary: #fcfcfd;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #f8f9fb;
+  --color-bg-surface: #f3f4f6;
+  --color-bg-glass: rgba(255, 255, 255, 0.85);
+  
+  /* 文字层次 - 清晰的信息层级 */
+  --color-text-primary: #1a1d29;
+  --color-text-secondary: #4a5568;
+  --color-text-tertiary: #718096;
+  --color-text-muted: #a0aec0;
+  --color-text-accent: #2d3748;
+  
+  /* 品牌色彩 - 优雅的翡翠绿系列 */
+  --color-primary: #047857;
+  --color-primary-light: #10b981;
+  --color-primary-soft: #d1fae5;
+  --color-primary-hover: #065f46;
+  --color-secondary: #3730a3;
+  --color-accent: #7c3aed;
+  
+  /* 边框系统 - 细腻的分割线 */
+  --color-border-subtle: #e2e8f0;
+  --color-border-medium: #cbd5e1;
+  --color-border-strong: #94a3b8;
+  --color-border-accent: var(--color-primary);
+  
+  /* 阴影层次 - 立体感营造 */
+  --shadow-ambient: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-pronounced: 0 16px 48px rgba(0, 0, 0, 0.12);
+  --shadow-accent: 0 4px 20px rgba(4, 120, 87, 0.15);
+  
+  /* 渐变效果 - 微妙的过渡 */
+  --gradient-subtle: linear-gradient(135deg, #ffffff 0%, #f8f9fb 100%);
+  --gradient-accent: linear-gradient(135deg, #047857 0%, #10b981 100%);
+  --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,249,251,0.7) 100%);
+  --gradient-shimmer: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+  
+  /* 动效参数 */
+  --timing-swift: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --timing-gentle: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --duration-instant: 150ms;
+  --duration-quick: 250ms;
+  --duration-smooth: 400ms;
+}
+
+/* ============================================ */
+/* 神秘黑金主题 - Luxurious Dark */
+/* ============================================ */
+:root[data-theme="hacker"] {
+  /* 基础色彩 - 深邃而神秘 */
+  --color-bg-primary: #0a0b0d;
+  --color-bg-secondary: #111318;
+  --color-bg-tertiary: #1a1d24;
+  --color-bg-surface: #242831;
+  --color-bg-glass: rgba(17, 19, 24, 0.9);
+  
+  /* 文字层次 - 发光的层级 */
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #64748b;
+  --color-text-muted: #475569;
+  --color-text-accent: #f1f5f9;
+  
+  /* 品牌色彩 - 神秘的紫金配色 */
+  --color-primary: #8b5cf6;
+  --color-primary-light: #a78bfa;
+  --color-primary-soft: rgba(139, 92, 246, 0.1);
+  --color-primary-hover: #7c3aed;
+  --color-secondary: #06b6d4;
+  --color-accent: #f59e0b;
+  
+  /* 边框系统 - 发光的轮廓 */
+  --color-border-subtle: #1e293b;
+  --color-border-medium: #334155;
+  --color-border-strong: #475569;
+  --color-border-accent: var(--color-primary);
+  
+  /* 阴影层次 - 发光效果 */
+  --shadow-ambient: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-medium: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --shadow-pronounced: 0 16px 64px rgba(0, 0, 0, 0.5);
+  --shadow-accent: 0 4px 20px rgba(139, 92, 246, 0.3);
+  
+  /* 渐变效果 - 神秘的光影 */
+  --gradient-subtle: linear-gradient(135deg, #111318 0%, #1a1d24 100%);
+  --gradient-accent: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  --gradient-glass: linear-gradient(135deg, rgba(17,19,24,0.95) 0%, rgba(26,29,36,0.8) 100%);
+  --gradient-shimmer: linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent);
+  
+  /* 动效参数 */
+  --timing-swift: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --timing-gentle: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --duration-instant: 150ms;
+  --duration-quick: 250ms;
+  --duration-smooth: 400ms;
+}
+
+/* ============================================ */
+/* 基础样式重构 */
+/* ============================================ */
+body {
+  font-family: 'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'liga' 1, 'kern' 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: all var(--duration-smooth) var(--timing-gentle);
+}
+
+[data-theme="light"] body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+[data-theme="hacker"] body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+/* 微妙的背景纹理 */
+[data-theme="light"] body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: 
+    radial-gradient(circle at 25% 25%, rgba(4, 120, 87, 0.02) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(55, 48, 163, 0.015) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+[data-theme="hacker"] body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.03) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.02) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ============================================ */
+/* 卡片系统 - 精致的容器设计 */
+/* ============================================ */
+.elegant-card {
+  background: var(--gradient-glass);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(20px);
+  position: relative;
+  transition: all var(--duration-quick) var(--timing-swift);
+  box-shadow: var(--shadow-soft);
+}
+
+.elegant-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--gradient-accent);
+  opacity: 0.6;
+  border-radius: 16px 16px 0 0;
+}
+
+.elegant-card:hover {
+  border-color: var(--color-border-accent);
+  box-shadow: var(--shadow-accent);
+  transform: translateY(-2px);
+}
+
+/* ============================================ */
+/* 按钮系统 - 优雅的交互设计 */
+/* ============================================ */
+.elegant-button {
+  background: var(--gradient-accent);
+  border: 1px solid var(--color-border-accent);
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--duration-quick) var(--timing-swift);
+  box-shadow: var(--shadow-soft);
+}
+
+.elegant-button::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: var(--gradient-shimmer);
+  transition: left var(--duration-smooth) var(--timing-swift);
+}
+
+.elegant-button:hover {
+  box-shadow: var(--shadow-accent);
+  transform: translateY(-1px);
+}
+
+.elegant-button:hover::before {
+  left: 100%;
+}
+
+.elegant-button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-soft);
+}
+
+/* 次要按钮 */
+.elegant-button-secondary {
+  background: var(--color-bg-glass);
+  border: 1px solid var(--color-border-medium);
+  color: var(--color-text-primary);
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  transition: all var(--duration-quick) var(--timing-swift);
+}
+
+.elegant-button-secondary:hover {
+  border-color: var(--color-border-accent);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+}
+
+/* ============================================ */
+/* 输入框系统 - 精致的表单设计 */
+/* ============================================ */
+.elegant-input {
+  background: var(--color-bg-glass);
+  border: 2px solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 16px;
+  backdrop-filter: blur(10px);
+  transition: all var(--duration-quick) var(--timing-swift);
+  box-shadow: var(--shadow-ambient);
+}
+
+.elegant-input:focus {
+  border-color: var(--color-border-accent);
+  box-shadow: 0 0 0 4px var(--color-primary-soft), var(--shadow-soft);
+  outline: none;
+  background: var(--color-bg-secondary);
+  transform: translateY(-1px);
+}
+
+.elegant-input::placeholder {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+/* ============================================ */
+/* 侧边栏设计 - 优雅的导航 */
+/* ============================================ */
+.elegant-sidebar {
+  background: var(--gradient-glass);
+  border-right: 1px solid var(--color-border-subtle);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-soft);
+  transition: all var(--duration-smooth) var(--timing-gentle);
+}
+
+.elegant-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: all var(--duration-quick) var(--timing-swift);
+  position: relative;
+  overflow: hidden;
+}
+
+.elegant-nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0;
+  width: 3px; height: 100%;
+  background: var(--gradient-accent);
+  transform: scaleY(0);
+  transition: transform var(--duration-quick) var(--timing-swift);
+}
+
+.elegant-nav-item:hover {
+  background: var(--color-primary-soft);
+  color: var(--color-text-primary);
+  transform: translateX(4px);
+}
+
+.elegant-nav-item.active {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+  font-weight: 600;
+}
+
+.elegant-nav-item.active::before {
+  transform: scaleY(1);
+}
+
+/* Collapsed sidebar navigation styles */
+.elegant-nav-item.collapsed {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  min-width: 48px;
+  min-height: 48px;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto !important;
+  border-radius: 12px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.elegant-nav-item.collapsed:hover {
+  transform: translateX(0) scale(1.05);
+  background: var(--color-primary-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.elegant-nav-item.collapsed.active {
+  background: var(--color-primary-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.elegant-nav-item.collapsed.active::before {
+  display: none;
+}
+
+/* Ensure all icons in collapsed state are perfectly centered */
+.elegant-nav-item.collapsed svg {
+  flex-shrink: 0;
+  margin: 0 !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* ============================================ */
+/* 聊天气泡 - 精致的对话设计 */
+/* ============================================ */
+.elegant-chat-user {
+  background: var(--gradient-accent);
+  color: white;
+  border-radius: 20px 20px 4px 20px;
+  padding: 16px 20px;
+  box-shadow: var(--shadow-medium);
+  position: relative;
+}
+
+.elegant-chat-user::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; right: -2px;
+  width: 8px; height: 8px;
+  background: var(--gradient-accent);
+  border-radius: 0 0 4px 0;
+}
+
+.elegant-chat-assistant {
+  background: var(--color-bg-glass);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 20px 20px 20px 4px;
+  padding: 16px 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-soft);
+  transition: all var(--duration-quick) var(--timing-swift);
+}
+
+.elegant-chat-assistant:hover {
+  border-color: var(--color-border-accent);
+  box-shadow: var(--shadow-medium);
+}
+
+/* ============================================ */
+/* 美化滚动条 */
+/* ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-tertiary);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gradient-accent);
+  border-radius: 8px;
+  border: 1px solid var(--color-border-subtle);
+  transition: all var(--duration-quick) var(--timing-swift);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-accent);
+}
+
+/* ============================================ */
+/* 选中文本样式 */
+/* ============================================ */
+::selection {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+}
+
+/* ============================================ */
+/* 动画定义 */
+/* ============================================ */
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes subtle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ============================================ */
+/* 响应式设计 */
+/* ============================================ */
+@media (max-width: 768px) {
+  .elegant-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .elegant-button {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  .elegant-input {
+    padding: 12px 16px;
+    font-size: 16px; /* 防止iOS缩放 */
+  }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+  :root[data-theme="light"] {
+    --color-border-subtle: #6b7280;
+    --color-text-tertiary: #374151;
+  }
+  
+  :root[data-theme="hacker"] {
+    --color-text-primary: #ffffff;
+    --color-border-subtle: #6b7280;
+  }
+}
+
+/* 减少动画模式 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
