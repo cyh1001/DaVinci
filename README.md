@@ -51,6 +51,35 @@ Here is the Snapshot: ![Flow EVM Testnet](./picture/flow.png)
 
 **Live Proof**: View our contract and transactions on [Flow EVM Testnet Explorer](https://evm-testnet.flowscan.io/address/0xd2F523a0085781Aa8492eeA6E84F0152B2c26E8f)
 
+## 🚀 Dynamic Integration
+
+**Prize Track**: Best App Involving AI Built on Dynamic
+
+**Environment ID**: `0b7822a0-f446-4987-87f9-83b179f422e1`
+
+DaVinci leverages **Dynamic SDK** to provide seamless, user-friendly wallet management for AI-powered e-commerce:
+
+### 🔐 Embedded Wallet Authentication
+- **Non-custodial Wallets**: Users maintain full control of private keys
+- **Multiple Auth Methods**: MetaMask, WalletConnect, Coinbase, Social logins, Email
+- **Visitor Mode**: Connect wallet without signing for seamless onboarding
+- **Progressive Authentication**: Upgrade to full features via message signing
+- **Multi-chain Support**: Ethereum, Solana, Bitcoin, Flow networks
+- **Wagmi Integration**: Enhanced Ethereum interactions via Dynamic's Wagmi provider
+
+### 🤖 AI + Crypto Native Experience
+- **AI Agent Conversations**: Wallet-gated chat interface with AI e-commerce agents
+- **Crypto-native Operations**: All AI decisions tied to wallet identity and blockchain records
+- **Personalized AI**: Agent behavior adapts based on wallet history and preferences
+
+### 💳 Seamless UX for Non-crypto Users
+- **Email/Social Login**: Users can access AI agents without crypto knowledge
+- **Progressive Web3**: Start with familiar login, gradually introduce crypto features
+- **Hidden Complexity**: Dynamic handles wallet creation and management behind the scenes
+- **Intuitive Interface**: Focus on AI commerce experience, not wallet technicalities
+
+**Innovation**: DaVinci merges advanced AI agents with Dynamic's embedded wallet infrastructure, creating a crypto-native commerce platform that's accessible to mainstream users while providing the transparency and security of blockchain technology.
+
 ---
 
 ## Vision: AI as Your Business Co-founder
@@ -124,16 +153,17 @@ DaVinci is an AI commerce system that learns, earns, and evolves alongside your 
 
 ## Tech Stack
 
-- Frontend: Next.js 15, React 19, TypeScript
-- Styling: Tailwind CSS, Radix UI Components
-- Content Management: BaseHub CMS
-- Email Service: Resend API
-- Authentication: Next-themes for theme management
-- Deployment: Vercel
-- DIFy / OpenAI platform integration
-- Kimi platform for AI assistant and automation tasks
-- Telegram bot
-- Web3: Flow EVM
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS v4.1.9, Radix UI Components
+- **Wallet Infrastructure**: Dynamic.xyz SDK with Wagmi integration
+- **Blockchain**: Flow EVM Testnet with custom smart contracts
+- **AI Integration**: Dify API with OpenAI fallback, multi-agent system
+- **Authentication**: Dynamic embedded wallets (MetaMask, WalletConnect, Social)
+- **Ethereum Integration**: Wagmi v2 with Dynamic provider for enhanced DeFi compatibility
+- **Package Manager**: pnpm with optimized dependencies
+- **Deployment**: Vercel with unoptimized images
+- **State Management**: React hooks with Dynamic SDK + Wagmi integration
+- **Multi-chain Support**: Ethereum, Solana, Bitcoin, Flow networks
 
 ---
 
